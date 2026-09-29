@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Якщо маєте ліцензійні файли шрифтів — покладіть у public/fonts і розкоментуйте:
+@font-face { font-family: "Proba Pro"; src: url("/fonts/ProbaPro-Regular.woff2") format("woff2"); font-weight: 400; }
+@font-face { font-family: "Proba Pro"; src: url("/fonts/ProbaPro-Bold.woff2") format("woff2"); font-weight: 700; }
+@font-face { font-family: "Orchidea Pro"; src: url("/fonts/OrchideaPro-SemiBold.woff2") format("woff2"); font-weight: 600; }
+*/
+
+html { scroll-behavior: smooth; }
+body { @apply bg-mist-50 text-navy-dark font-sans antialiased; }
