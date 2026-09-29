@@ -1,6 +1,7 @@
 """Pydantic-схеми (валідація вхідних/вихідних даних)."""
 import re
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
@@ -60,6 +61,14 @@ class BookingCreate(BaseModel):
             raise ValueError("Потрібна пошта НаУКМА (@ukma.edu.ua)")
         return v.lower()
 
+    @field_validator("start_time", "end_time")
+    @classmethod
+    def to_kyiv_naive(cls, v: datetime) -> datetime:
+        """Якщо клієнт надіслав час із поясом (напр. ...Z), переводимо в київський без tz."""
+        if v.tzinfo is not None:
+            v = v.astimezone(ZoneInfo("Europe/Kyiv")).replace(tzinfo=None)
+        return v
+
     @model_validator(mode="after")
     def check_times(self):
         if self.end_time <= self.start_time:
@@ -104,3 +113,13 @@ class BookingAdminUpdate(BaseModel):
         if self.status == BookingStatus.rejected and not (self.admin_comment or "").strip():
             raise ValueError("Вкажіть причину відхилення або що змінити для погодження")
         return self
+
+
+class RoomDetail(RoomOut):
+    """Деталі кімнати + зайняті слоти для календаря."""
+    building_name: str = ""
+    booked_slots: list[BookedSlot] = Field(default_factory=list)
+
+
+class AdminBookingOut(BookingOut):
+    room_name: str = ""
