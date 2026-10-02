@@ -31,3 +31,6 @@ export function nextDays(n) {
     return d;
   });
 }
+
+export const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+export const sameDay = (a, b) => a.toDateString() === b.toDateString();
