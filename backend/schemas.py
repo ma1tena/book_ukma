@@ -27,7 +27,9 @@ class RoomOut(BaseModel):
     name: str
     description: str
     capacity: int
+    capacity_text: str | None = None
     photo_url: str
+    photos: list[str] = Field(default_factory=list)
     inventory: list[str]
 
 

@@ -37,8 +37,10 @@ class Room(Base):
     building_id: Mapped[int] = mapped_column(ForeignKey("buildings.id"), index=True)
     name: Mapped[str] = mapped_column(String(120))
     description: Mapped[str] = mapped_column(Text, default="")
-    capacity: Mapped[int] = mapped_column(Integer)
-    photo_url: Mapped[str] = mapped_column(String(500), default="")
+    capacity: Mapped[int] = mapped_column(Integer)                       # максимум — для перевірки заявок
+    capacity_text: Mapped[str | None] = mapped_column(String(60), nullable=True)  # напис на сайті, напр. «до 150 - 200 осіб»
+    photo_url: Mapped[str] = mapped_column(String(500), default="")      # обкладинка (перше фото)
+    photos: Mapped[list[str]] = mapped_column(JSON, default=list)        # усі фото для галереї
     inventory: Mapped[list[str]] = mapped_column(JSON, default=list)  # ["Проєктор", ...]
     sort_order: Mapped[int] = mapped_column(Integer, default=100)
 
