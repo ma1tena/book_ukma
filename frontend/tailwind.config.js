@@ -10,6 +10,7 @@ export default {
         slate: { DEFAULT: "#384D7A", 200: "#CCD4DE", 300: "#9CA6BD" },
         amber: { DEFAULT: "#DE9945" },
         coral: { DEFAULT: "#DE5E3D" },
+        gold: { DEFAULT: "#AD8B3A" },
       },
       fontFamily: {
         // Proba Pro → Helvetica (Mac) → Arial (Windows), як у брендбуці

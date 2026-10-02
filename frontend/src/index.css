@@ -10,3 +10,78 @@
 
 html { scroll-behavior: smooth; }
 body { @apply bg-mist-50 text-navy-dark font-sans antialiased; }
+
+/* ===== Пропорційна сітка: ширина макета Figma = 2471 px ===== */
+/* --u = «1 піксель Figma» у поточній ширині вікна. Розмір у Figma N px → calc(N * var(--u)) */
+:root { --u: calc(100vw / 2471); }
+
+@layer components {
+  /* шрифти: N — розмір у Figma, перший аргумент max() — мінімум для вузьких екранів */
+  .t-24 { font-size: max(.75rem, calc(24 * var(--u))); }
+  .t-28 { font-size: max(.875rem, calc(28 * var(--u))); }
+  .t-30 { font-size: max(.9rem, calc(30 * var(--u))); }
+  .t-34 { font-size: max(1rem, calc(34 * var(--u))); }
+  .t-44 { font-size: max(1.25rem, calc(44 * var(--u))); }
+  .t-54 { font-size: max(1.6rem, calc(54 * var(--u))); }
+  .t-88 { font-size: max(2.4rem, calc(88 * var(--u))); }
+
+  /* Хедер */
+  .hpad { padding-inline: max(1rem, calc(85 * var(--u))); }
+  .topbar { height: max(2.5rem, calc(67 * var(--u))); border-bottom: 1px solid #EBF2FF; background: #fff; color: #71738B; }
+
+  /* Титульне фото */
+  .hero { position: relative; overflow: hidden; height: max(22rem, calc(978 * var(--u))); }
+  .hero-title { font-size: max(2.25rem, calc(106 * var(--u))); font-weight: 700; line-height: 1.04; }
+  .hero-line { width: max(5rem, calc(160 * var(--u))); height: 1px; margin: max(.9rem, calc(30 * var(--u))) auto; background: rgba(255,255,255,.4); }
+  .hero-sub { font-size: max(.85rem, calc(34 * var(--u))); letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+  .hero-arrow { position: absolute; top: 50%; z-index: 10; display: flex; align-items: center; justify-content: center;
+    width: max(3rem, calc(113 * var(--u))); height: max(3rem, calc(113 * var(--u))); transform: translateY(-50%);
+    border-radius: 9999px; border: 1px solid rgba(255,255,255,.4); background: rgba(255,255,255,.15); color: #AD8B3A;
+    backdrop-filter: blur(4px); transition: all .2s; }
+  .hero-arrow:hover { background: #fff; border-color: #AD8B3A; }
+  .hero-arrow svg { width: max(1.5rem, calc(46 * var(--u))); height: max(1.5rem, calc(46 * var(--u))); }
+
+  /* Комірки корпусів: 656 px */
+  .bgrid { display: grid; gap: max(.75rem, calc(41 * var(--u))); grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); }
+  .bcard { display: flex; align-items: center; justify-content: space-between; gap: calc(24 * var(--u));
+    min-height: max(9rem, calc(262 * var(--u))); padding: max(1.25rem, calc(51 * var(--u)));
+    border-radius: max(.6rem, calc(20 * var(--u))); border: 1px solid transparent; transition: all .2s; }
+  .bcard-arrow { flex-shrink: 0; width: max(1.25rem, calc(38 * var(--u))); height: max(1.25rem, calc(38 * var(--u))); color: #AD8B3A; transition: transform .2s; }
+  .bcard-pill { flex-shrink: 0; border-radius: 9999px; background: rgba(173,139,58,.1); color: #AD8B3A; font-weight: 600;
+    font-size: max(.75rem, calc(24 * var(--u))); padding: max(.3rem, calc(12 * var(--u))) max(.75rem, calc(26 * var(--u))); }
+
+  /* Картка приміщення: 2374 × 621 px */
+  .rcard { display: grid; overflow: hidden; background: #fff; border-radius: max(.75rem, calc(28 * var(--u))); box-shadow: 0 0 0 1px #CFDBF2; transition: box-shadow .2s; }
+  .rcard-body { display: flex; flex-direction: column; justify-content: center; padding: max(1.25rem, calc(73 * var(--u))); }
+  .chip { display: inline-flex; align-items: center; gap: .4rem; border-radius: 9999px; background: #EBF2FF; color: #062159; font-weight: 600;
+    font-size: max(.75rem, calc(28 * var(--u))); padding: max(.3rem, calc(12 * var(--u))) max(.75rem, calc(28 * var(--u))); }
+  .btn-arrow { display: inline-flex; width: fit-content; align-items: center; gap: .75rem; border-radius: .375rem; font-weight: 600;
+    font-size: max(.9rem, calc(31 * var(--u))); padding: max(.6rem, calc(24 * var(--u))) max(1.1rem, calc(50 * var(--u))); }
+
+  /* Сторінка приміщення: фото 1067 · календар 1065 */
+  .cal-card { background: #fff; box-shadow: 0 0 0 1px #CFDBF2; border-radius: max(.75rem, calc(28 * var(--u))); padding: max(1.25rem, calc(66 * var(--u))); }
+  .cal-nav { display: flex; align-items: center; justify-content: center; border: 1px solid #CFDBF2; border-radius: .5rem; color: #AD8B3A;
+    width: max(2.5rem, calc(72 * var(--u))); height: max(2.5rem, calc(72 * var(--u))); transition: all .2s; }
+  .cal-nav:hover:not(:disabled) { border-color: #AD8B3A; background: #fff; }
+  .cal-nav:disabled { opacity: .3; }
+
+  @media (min-width: 1024px) {
+    .bgrid { grid-template-columns: repeat(3, calc(656 * var(--u))); justify-content: center; }
+    .rcard { width: calc(2374 * var(--u)); height: calc(621 * var(--u)); margin-inline: auto; grid-template-columns: 42% 1fr; }
+    .roomgrid { width: calc(2264 * var(--u)); margin-inline: auto; display: grid; align-items: start;
+      grid-template-columns: calc(1067 * var(--u)) calc(1065 * var(--u)); column-gap: calc(132 * var(--u)); }
+    .backlink-232 { padding-left: calc(232 * var(--u)); }
+    .pad-page { padding-inline: calc(48 * var(--u)); }
+  }
+  @media (max-width: 1023px) {
+    .roomgrid { display: grid; gap: 2.5rem; }
+    .pad-page { padding-inline: 1rem; }
+  }
+}
+
+/* Макет у Figma: ширина кадру 2471 px = 100% ширини екрана.
+   --u = один піксель Figma, тому всі виміри масштабуються пропорційно. */
+:root { --u: calc(100vw / 2471); }
+/* На десктопі rem теж масштабується з шириною (кадр Figma ≈ 2× від 16px-макета),
+   тому всі стандартні розміри тексту й відступів зростають пропорційно. */
+@media (min-width: 1024px) { html { font-size: clamp(14px, 1.295vw, 40px); } }
