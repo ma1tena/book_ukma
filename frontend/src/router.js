@@ -5,6 +5,7 @@ function parse() {
   const [, a, b] = (window.location.hash.replace(/^#/, "") || "/").split("/");
   if (a === "building" && +b) return { name: "building", id: +b };
   if (a === "room" && +b) return { name: "room", id: +b };
+  if (a === "auth") return { name: "auth" };          // повернення з Office 365
   return { name: "home" };
 }
 
