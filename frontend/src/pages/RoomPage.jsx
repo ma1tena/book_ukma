@@ -1,6 +1,7 @@
 import { ArrowLeft, Check, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { getRoom } from "../api";
+import { useAuth } from "../auth";
 import ErrorBanner from "../components/ErrorBanner";
 import MonthCalendar from "../components/MonthCalendar";
 import PhotoGallery from "../components/PhotoGallery";
@@ -19,6 +20,9 @@ export default function RoomPage({ id }) {
   const [selection, setSelection] = useState(null);
   const [notice, setNotice] = useState(null);
   const [stub, setStub] = useState(false);
+  const { user, openAuth } = useAuth();
+  // Не увійшов — спершу реєстрація; після неї одразу продовжуємо
+  const generate = () => (user ? setStub(true) : openAuth({ view: "register", onDone: () => setStub(true) }));
   const booked = useMemo(() => (room ? parseBooked(room.booked_slots) : []), [room]);
   const pickDay = (d) => { setDay(d); setSelection(null); setNotice(null); };
 
@@ -71,7 +75,7 @@ export default function RoomPage({ id }) {
                     {fmt(selection.start, { day: "numeric", month: "long" })}, {fmtTime(selection.start)}–{fmtTime(selection.end)}
                   </div>
                 </div>
-                <button onClick={() => setStub(true)}
+                <button onClick={generate}
                         className="rounded-md border-2 border-white bg-white px-6 py-3 font-bold text-navy transition hover:border-gold">
                   Згенерувати подання
                 </button>
@@ -85,7 +89,7 @@ export default function RoomPage({ id }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-dark/60 p-4" onClick={() => setStub(false)}>
           <div className="max-w-md rounded-2xl bg-white p-8 text-center" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-2xl font-bold text-navy">Квіз-форма — наступний крок</h3>
-            <p className="mt-3 text-slate">Слот обрано! Форму подання (ПІБ, контакти, апаратура) додамо в Milestone 4.</p>
+            <p className="mt-3 text-slate">Слот обрано{user ? `, ви увійшли як ${user.email}` : ""}! Саму форму подання (назва заходу, апаратура, учасники) додамо на наступному кроці.</p>
             <button onClick={() => setStub(false)} className="mt-6 rounded-md bg-navy px-6 py-2 font-semibold text-white">Зрозуміло</button>
           </div>
         </div>

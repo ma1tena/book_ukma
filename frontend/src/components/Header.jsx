@@ -1,5 +1,6 @@
-import { Mail, MapPin, Phone } from "lucide-react";
+import { LogOut, Mail, MapPin, Phone, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useAuth } from "../auth";
 import { CONTACT } from "../config";
 import { goSection } from "../router";
 
@@ -8,6 +9,8 @@ const PAD = "px-4 lg:px-[calc(var(--u)*82)]";
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
+  const { user, ready, openAuth, logout } = useAuth();
+  const shortName = user ? (user.full_name.split(" ")[1] || user.full_name || user.email.split("@")[0]) : "";
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 40);
     on();
@@ -43,6 +46,14 @@ export default function Header() {
             <button onClick={() => goSection("contacts")} className="hidden text-lg font-semibold text-navy transition hover:text-blue sm:block">
               Контакти
             </button>
+            {ready && (user ? (
+              <div className="flex items-center gap-3 text-navy">
+                <span className="hidden items-center gap-2 font-semibold md:flex" title={user.email}><UserRound size={20} className="text-gold" />{shortName}</span>
+                <button onClick={logout} aria-label="Вийти" title="Вийти" className="rounded-full p-2 text-slate transition hover:bg-mist-100 hover:text-navy"><LogOut size={20} /></button>
+              </div>
+            ) : (
+              <button onClick={() => openAuth({ view: "login" })} className="text-lg font-semibold text-navy transition hover:text-blue">Увійти</button>
+            ))}
             <button onClick={() => goSection("buildings")}
                     className="rounded-md border-2 border-navy px-5 py-2.5 text-sm font-bold uppercase tracking-widest text-navy transition hover:border-gold hover:bg-mist-50 md:px-7 md:py-3">
               Обрати корпус
