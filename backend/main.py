@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
+from auth import router as auth_router
 from database import Base, engine, get_db
 from models import Booking, BookingStatus, Building, Room
 from schemas import (AdminBookingOut, BookedSlot, BookingAdminUpdate,
@@ -40,6 +41,9 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+app.include_router(auth_router)
 
 
 # ---------- Допоміжні функції ----------
