@@ -91,3 +91,53 @@ class Booking(Base):
         CheckConstraint("expected_participants > 0", name="ck_booking_participants"),
         Index("ix_booking_room_time", "room_id", "start_time", "end_time"),
     )
+
+
+# ───────────────────────── Автентифікація ─────────────────────────
+class AccountType(str, enum.Enum):
+    corporate = "corporate"   # пошта @ukma.edu.ua
+    guest = "guest"           # будь-яка інша пошта (режим «гість»)
+
+
+class UserRole(str, enum.Enum):
+    user = "user"
+    admin = "admin"
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(150), unique=True, index=True)
+    password_hash: Mapped[str | None] = mapped_column(String(200), nullable=True)  # None — вхід лише через Office 365
+    full_name: Mapped[str] = mapped_column(String(150), default="")
+    faculty_course: Mapped[str] = mapped_column(String(50), default="")
+    phone: Mapped[str] = mapped_column(String(20), default="")
+    account_type: Mapped[AccountType] = mapped_column(Enum(AccountType), default=AccountType.corporate)
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.user)
+    provider: Mapped[str] = mapped_column(String(20), default="local")             # local | microsoft
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class EmailCode(Base):
+    """Одноразовий код із листа (реєстрація або скидання пароля). Зберігається лише хеш."""
+    __tablename__ = "email_codes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(150), index=True)
+    purpose: Mapped[str] = mapped_column(String(20))                  # register | reset
+    code_hash: Mapped[str] = mapped_column(String(64))
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    verified_token_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class AuthSession(Base):
+    __tablename__ = "auth_sessions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
