@@ -6,8 +6,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+import auth
 import init_db
 from database import Base, get_db
+from models import User
 from main import app
 
 ADMIN = {"X-Admin-Token": "dev-admin-token"}
@@ -21,6 +23,11 @@ def client():
     Session = sessionmaker(bind=engine, autoflush=False)
     with Session() as db:
         init_db.seed(db)
+        ua = User(email="student@ukma.edu.ua", full_name="Студент Тест Іванович", faculty_course="ФІ-2", phone="+380501112233")
+        ub = User(email="other@ukma.edu.ua", full_name="Інша Особа Петрівна", faculty_course="ФГН-1", phone="+380671112233")
+        db.add_all([ua, ub])
+        db.commit()
+        tok_a, tok_b = auth.create_session(db, ua), auth.create_session(db, ub)
 
     def override():
         db = Session()
@@ -30,7 +37,10 @@ def client():
             db.close()
 
     app.dependency_overrides[get_db] = override
-    yield TestClient(app)
+    c = TestClient(app)
+    c.headers["Authorization"] = f"Bearer {tok_a}"
+    c.token_b = tok_b
+    yield c
     app.dependency_overrides.clear()
 
 
@@ -43,7 +53,7 @@ def payload(room_id, start, end, **kw):
     base = dict(
         room_id=room_id, start_time=start.isoformat(), end_time=end.isoformat(),
         responsible_name="Петренко П. П.", faculty_course="ФІ-2",
-        email="p.petrenko@ukma.edu.ua", phone="+380 66 123 45 67",
+        phone="+380 66 123 45 67",
         organization="СО «Тест»", event_name="Тестова подія",
         expected_participants=20, equipment=["Проєктор"],
     )
@@ -106,8 +116,6 @@ def test_business_validation(client):
     assert client.post("/api/bookings", json=night).status_code == 422
     past = payload(rid, datetime.now() - timedelta(days=1), datetime.now() - timedelta(hours=20))
     assert client.post("/api/bookings", json=past).status_code == 422
-    bad_mail = payload(rid, tomorrow(9), tomorrow(10), email="x@gmail.com")
-    assert client.post("/api/bookings", json=bad_mail).status_code == 422
 
 
 def test_admin_requires_token(client):
@@ -152,3 +160,32 @@ def test_cors_allows_vercel(client):
         "Origin": "https://book-ukma.vercel.app",
         "Access-Control-Request-Method": "GET"})
     assert r.headers.get("access-control-allow-origin") == "https://book-ukma.vercel.app"
+
+
+# ───────── Заявки під акаунтом ─────────
+def test_booking_requires_login(client):
+    rid = colosseum_id(client)
+    anon = TestClient(app)
+    assert anon.post("/api/bookings", json=payload(rid, tomorrow(10), tomorrow(11))).status_code == 401
+    assert anon.get("/api/bookings/mine").status_code == 401
+
+
+def test_booking_is_attached_to_account(client):
+    rid = colosseum_id(client)
+    b = client.post("/api/bookings", json=payload(rid, tomorrow(10), tomorrow(11))).json()
+    assert b["email"] == "student@ukma.edu.ua" and b["user_id"] is not None
+    assert b["organizers"] == "Петренко П. П." and b["contact_phone"] == b["phone"]   # значення за замовчуванням
+
+
+def test_my_bookings_are_private(client):
+    rid = colosseum_id(client)
+    created = client.post("/api/bookings", json=payload(rid, tomorrow(10), tomorrow(11),
+                          applicant_role="Секретарка", contact_name="Іваненко Ірина")).json()
+    mine = client.get("/api/bookings/mine").json()
+    assert len(mine) == 1 and mine[0]["room_name"] == "Колізей" and mine[0]["building_name"].startswith("Культурно")
+    assert mine[0]["applicant_role"] == "Секретарка" and mine[0]["contact_name"] == "Іваненко Ірина"
+
+    other = {"Authorization": f"Bearer {client.token_b}"}
+    assert client.get("/api/bookings/mine", headers=other).json() == []
+    assert client.get(f"/api/bookings/{created['id']}", headers=other).status_code == 404   # чужу заявку не видно
+    assert client.get(f"/api/bookings/{created['id']}").status_code == 200
