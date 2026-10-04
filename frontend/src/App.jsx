@@ -6,6 +6,8 @@ import Footer from "./components/Footer";
 import Header from "./components/Header";
 import BuildingPage from "./pages/BuildingPage";
 import HomePage from "./pages/HomePage";
+import MyBookingsPage from "./pages/MyBookingsPage";
+import PetitionPage from "./pages/PetitionPage";
 import RoomPage from "./pages/RoomPage";
 import { useRoute } from "./router";
 
@@ -33,6 +35,8 @@ function Shell() {
       {route.name === "home" && <HomePage />}
       {route.name === "building" && <BuildingPage key={route.id} id={route.id} />}
       {route.name === "room" && <RoomPage key={route.id} id={route.id} />}
+      {route.name === "my" && <MyBookingsPage />}
+      {route.name === "petition" && <PetitionPage key={route.id} id={route.id} />}
       {route.name === "auth" && <p className="py-32 text-center text-slate">Входимо…</p>}
       <Footer />
       <AuthModal />

@@ -4,6 +4,7 @@ import { getRoom } from "../api";
 import { useAuth } from "../auth";
 import ErrorBanner from "../components/ErrorBanner";
 import MonthCalendar from "../components/MonthCalendar";
+import QuizModal from "../components/QuizModal";
 import PhotoGallery from "../components/PhotoGallery";
 import TimeSlots from "../components/TimeSlots";
 import { useFetch } from "../hooks";
@@ -19,10 +20,10 @@ export default function RoomPage({ id }) {
   const [day, setDay] = useState(null);
   const [selection, setSelection] = useState(null);
   const [notice, setNotice] = useState(null);
-  const [stub, setStub] = useState(false);
+  const [quiz, setQuiz] = useState(false);
   const { user, openAuth } = useAuth();
   // Не увійшов — спершу реєстрація; після неї одразу продовжуємо
-  const generate = () => (user ? setStub(true) : openAuth({ view: "register", onDone: () => setStub(true) }));
+  const generate = () => (user ? setQuiz(true) : openAuth({ view: "register", onDone: () => setQuiz(true) }));
   const booked = useMemo(() => (room ? parseBooked(room.booked_slots) : []), [room]);
   const pickDay = (d) => { setDay(d); setSelection(null); setNotice(null); };
 
@@ -32,7 +33,7 @@ export default function RoomPage({ id }) {
         <ArrowLeft size={18} className="text-gold transition-transform group-hover:-translate-x-1" /> До приміщень корпусу
       </a>
       {error && <ErrorBanner message={error} onRetry={reload} />}
-      {loading && <p className="mt-10 text-center text-slate">Завантаження…</p>}
+      {loading && !room && <p className="mt-10 text-center text-slate">Завантаження…</p>}
 
       {room && (
         <div className="mt-8 grid items-start gap-10 lg:grid-cols-2 lg:gap-x-[calc(var(--u)*100)]">
@@ -85,14 +86,9 @@ export default function RoomPage({ id }) {
         </div>
       )}
 
-      {stub && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-dark/60 p-4" onClick={() => setStub(false)}>
-          <div className="max-w-md rounded-2xl bg-white p-8 text-center" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-2xl font-bold text-navy">Квіз-форма — наступний крок</h3>
-            <p className="mt-3 text-slate">Слот обрано{user ? `, ви увійшли як ${user.email}` : ""}! Саму форму подання (назва заходу, апаратура, учасники) додамо на наступному кроці.</p>
-            <button onClick={() => setStub(false)} className="mt-6 rounded-md bg-navy px-6 py-2 font-semibold text-white">Зрозуміло</button>
-          </div>
-        </div>
+      {quiz && (
+        <QuizModal room={room} selection={selection} onClose={() => setQuiz(false)}
+                   onCreated={() => { setSelection(null); reload(); }} onConflict={() => reload()} />
       )}
     </div></main>
   );

@@ -22,7 +22,7 @@ export default function Header() {
   return (
     <>
       {/* Верхня смужка: лінія знизу на відстані 67 px Figma від початку сторінки */}
-      <div className="bg-white">
+      <div className="bg-white print:hidden">
         <div className={PAD}>
           <div className="flex items-center justify-between gap-6 border-b border-[#EBF2FF] py-2.5 text-sm text-[#71738B] lg:h-[calc(var(--u)*67)] lg:py-0">
             <span className="hidden md:inline">Києво-Могилянська Академія</span>
@@ -36,7 +36,7 @@ export default function Header() {
       </div>
 
       {/* Липка головна панель: лого завжди зверху, клік — на головну */}
-      <header className={`sticky top-0 z-40 bg-white transition-shadow ${scrolled ? "shadow-md" : ""}`}>
+      <header className={`sticky top-0 z-40 bg-white transition-shadow print:hidden ${scrolled ? "shadow-md" : ""}`}>
         <div className={`flex items-center justify-between gap-6 transition-all ${PAD} ${scrolled ? "py-2" : "py-4 md:py-6"}`}>
           <a href="#/" aria-label="На головну">
             <img src="/logo-naukma.svg" alt="НаУКМА" fetchpriority="high"
@@ -48,6 +48,7 @@ export default function Header() {
             </button>
             {ready && (user ? (
               <div className="flex items-center gap-3 text-navy">
+                <a href="#/my" className="hidden text-lg font-semibold transition hover:text-blue md:block">Мої заявки</a>
                 <span className="hidden items-center gap-2 font-semibold md:flex" title={user.email}><UserRound size={20} className="text-gold" />{shortName}</span>
                 <button onClick={logout} aria-label="Вийти" title="Вийти" className="rounded-full p-2 text-slate transition hover:bg-mist-100 hover:text-navy"><LogOut size={20} /></button>
               </div>

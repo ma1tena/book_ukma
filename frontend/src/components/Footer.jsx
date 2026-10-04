@@ -6,7 +6,7 @@ const Label = ({ children }) => <div className="mb-4 text-xs font-bold uppercase
 
 export default function Footer() {
   return (
-    <footer id="contacts" className="mt-20 scroll-mt-28 bg-navy text-white">
+    <footer id="contacts" className="mt-20 scroll-mt-28 bg-navy text-white print:hidden">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-4">
         <div>
           <img src="/logo-naukma-white.svg" alt="НаУКМА" className="h-14 w-auto" />
