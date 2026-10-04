@@ -40,9 +40,12 @@ class BookingCreate(BaseModel):
     end_time: datetime
     responsible_name: str = Field(min_length=5, max_length=150)
     faculty_course: str = Field(min_length=2, max_length=50)
-    email: EmailStr
     phone: str
+    applicant_role: str = Field(default="", max_length=100)
     organization: str = Field(default="", max_length=150)
+    organizers: str = Field(default="", max_length=200)
+    contact_name: str = Field(default="", max_length=150)
+    contact_phone: str = ""
     event_name: str = Field(min_length=3, max_length=200)
     event_description: str = Field(default="", max_length=2000)
     expected_participants: int = Field(gt=0, le=1000)
@@ -56,12 +59,15 @@ class BookingCreate(BaseModel):
             raise ValueError("Номер має бути у форматі +380XXXXXXXXX")
         return v
 
-    @field_validator("email")
+    @field_validator("contact_phone")
     @classmethod
-    def check_email_domain(cls, v: str) -> str:
-        if not v.lower().endswith("@ukma.edu.ua"):
-            raise ValueError("Потрібна пошта НаУКМА (@ukma.edu.ua)")
-        return v.lower()
+    def check_contact_phone(cls, v: str) -> str:
+        if not v:
+            return v
+        v = re.sub(r"[\s\-()]", "", v)
+        if not PHONE_RE.match(v):
+            raise ValueError("Контактний номер має бути у форматі +380XXXXXXXXX")
+        return v
 
     @field_validator("start_time", "end_time")
     @classmethod
@@ -96,6 +102,11 @@ class BookingOut(BaseModel):
     status: BookingStatus
     admin_comment: str | None
     created_at: datetime
+    applicant_role: str = ""
+    organizers: str = ""
+    contact_name: str = ""
+    contact_phone: str = ""
+    user_id: int | None = None
 
 
 class BookedSlot(BaseModel):
@@ -125,3 +136,4 @@ class RoomDetail(RoomOut):
 
 class AdminBookingOut(BookingOut):
     room_name: str = ""
+    building_name: str = ""

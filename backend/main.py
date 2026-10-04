@@ -9,9 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from auth import router as auth_router
-from database import Base, engine, get_db
-from models import Booking, BookingStatus, Building, Room
+from auth import get_current_user, router as auth_router
+from database import Base, engine, get_db, migrate_sqlite
+from models import Booking, BookingStatus, Building, Room, User, UserRole
 from schemas import (AdminBookingOut, BookedSlot, BookingAdminUpdate,
                      BookingCreate, BookingOut, BuildingOut, RoomDetail, RoomOut)
 
@@ -28,6 +28,7 @@ BLOCKING = (BookingStatus.pending, BookingStatus.approved)  # ці статус�
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(engine)
+    migrate_sqlite()
     yield
 
 
@@ -70,6 +71,7 @@ def find_conflict(db: Session, room_id: int, start: datetime, end: datetime,
 def to_admin_out(b: Booking) -> AdminBookingOut:
     out = AdminBookingOut.model_validate(b)
     out.room_name = b.room.name
+    out.building_name = b.room.building.name
     return out
 
 
@@ -127,7 +129,7 @@ def get_room(
 
 
 @app.post("/api/bookings", response_model=BookingOut, status_code=201)
-def create_booking(data: BookingCreate, db: Session = Depends(get_db)):
+def create_booking(data: BookingCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     room = db.scalars(
         select(Room).options(joinedload(Room.building)).where(Room.id == data.room_id)
     ).first()
@@ -159,12 +161,33 @@ def create_booking(data: BookingCreate, db: Session = Depends(get_db)):
     if find_conflict(db, room.id, data.start_time, data.end_time):
         raise HTTPException(409, "Цей час уже зайнятий або очікує розгляду. Оберіть інше віконце")
 
-    booking = Booking(**{**data.model_dump(), "equipment": equipment},
-                      status=BookingStatus.pending)
+    booking = Booking(
+        **{**data.model_dump(), "equipment": equipment,
+           "organizers": data.organizers.strip() or data.responsible_name,
+           "contact_name": data.contact_name.strip() or data.responsible_name,
+           "contact_phone": data.contact_phone or data.phone},
+        email=user.email, user_id=user.id, status=BookingStatus.pending)
     db.add(booking)
     db.commit()
     db.refresh(booking)
     return booking
+
+
+@app.get("/api/bookings/mine", response_model=list[AdminBookingOut])
+def my_bookings(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Заявки поточного користувача (разом із коментарями адміністраторки)."""
+    q = (select(Booking).options(joinedload(Booking.room).joinedload(Room.building))
+         .where(Booking.user_id == user.id).order_by(Booking.created_at.desc()))
+    return [to_admin_out(b) for b in db.scalars(q).all()]
+
+
+@app.get("/api/bookings/{booking_id}", response_model=AdminBookingOut)
+def get_booking(booking_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    b = db.scalars(select(Booking).options(joinedload(Booking.room).joinedload(Room.building))
+                   .where(Booking.id == booking_id)).first()
+    if not b or (b.user_id != user.id and user.role != UserRole.admin):
+        raise HTTPException(404, "Заявку не знайдено")
+    return to_admin_out(b)
 
 
 # ---------- Адмін-ендпоінти ----------
@@ -175,7 +198,7 @@ def admin_list_bookings(
     room_id: int | None = Query(None),
     db: Session = Depends(get_db),
 ):
-    q = select(Booking).options(joinedload(Booking.room)).order_by(Booking.created_at.desc())
+    q = select(Booking).options(joinedload(Booking.room).joinedload(Room.building)).order_by(Booking.created_at.desc())
     if status:
         q = q.where(Booking.status == status)
     if room_id:
@@ -187,7 +210,7 @@ def admin_list_bookings(
            dependencies=[Depends(require_admin)])
 def admin_update_booking(booking_id: int, data: BookingAdminUpdate, db: Session = Depends(get_db)):
     booking = db.scalars(
-        select(Booking).options(joinedload(Booking.room)).where(Booking.id == booking_id)
+        select(Booking).options(joinedload(Booking.room).joinedload(Room.building)).where(Booking.id == booking_id)
     ).first()
     if not booking:
         raise HTTPException(404, "Заявку не знайдено")
