@@ -23,3 +23,22 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def migrate_sqlite() -> None:
+    """Додає нові колонки до вже існуючих таблиць SQLite — без втрати даних і без --reset."""
+    if not DATABASE_URL.startswith("sqlite"):
+        return
+    wanted = {"bookings": {
+        "applicant_role": "VARCHAR(100) DEFAULT ''",
+        "organizers": "VARCHAR(200) DEFAULT ''",
+        "contact_name": "VARCHAR(150) DEFAULT ''",
+        "contact_phone": "VARCHAR(20) DEFAULT ''",
+        "user_id": "INTEGER",
+    }}
+    with engine.begin() as conn:
+        for table, cols in wanted.items():
+            have = {row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table})")}
+            for name, ddl in cols.items():
+                if have and name not in have:
+                    conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}")

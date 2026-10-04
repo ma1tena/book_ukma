@@ -72,6 +72,11 @@ class Booking(Base):
     event_description: Mapped[str] = mapped_column(Text, default="")
     expected_participants: Mapped[int] = mapped_column(Integer)
     equipment: Mapped[list[str]] = mapped_column(JSON, default=list)   # обрана апаратура
+    applicant_role: Mapped[str] = mapped_column(String(100), default="")   # посада в СО (для подання)
+    organizers: Mapped[str] = mapped_column(String(200), default="")
+    contact_name: Mapped[str] = mapped_column(String(150), default="")
+    contact_phone: Mapped[str] = mapped_column(String(20), default="")
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
 
     # Обробка адміністраторкою
     status: Mapped[BookingStatus] = mapped_column(
