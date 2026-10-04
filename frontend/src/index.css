@@ -85,3 +85,9 @@ body { @apply bg-mist-50 text-navy-dark font-sans antialiased; }
 /* На десктопі rem теж масштабується з шириною (кадр Figma ≈ 2× від 16px-макета),
    тому всі стандартні розміри тексту й відступів зростають пропорційно. */
 @media (min-width: 1024px) { html { font-size: clamp(14px, 1.295vw, 40px); } }
+
+/* Друк подання: лише документ, без шапки й футера */
+@media print {
+  @page { margin: 18mm; }
+  body { background: #fff !important; }
+}

@@ -51,3 +51,8 @@ export const updateMe = (data) => request("/api/auth/me", { method: "PATCH", bod
 export const resetStart = (email) => post("/api/auth/password-reset/start", { email });
 export const resetConfirm = (email, code, new_password) => post("/api/auth/password-reset/confirm", { email, code, new_password });
 export const microsoftLoginUrl = `${BASE}/api/auth/microsoft/login`;
+
+// ───── Заявки ─────
+export const createBooking = (data) => post("/api/bookings", data);
+export const myBookings = () => request("/api/bookings/mine");
+export const getBooking = (id) => request(`/api/bookings/${id}`);

@@ -6,3 +6,10 @@ export const CONTACT = {
   fax: "463-67-83",
   email: "vkd@ukma.edu.ua",
 };
+
+// Шапка подання (кому адресоване і хто погоджує)
+export const PETITION = {
+  recipientTitle: "Керівниці КМЦ НаУКМА",
+  recipientName: "Осьмак В. А.",
+  approver: "Владислава ОСЬМАК",
+};
