@@ -4,19 +4,21 @@ import secrets
 from contextlib import asynccontextmanager
 from datetime import date, datetime, time, timedelta
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from auth import get_current_user, router as auth_router
+import auth
+import emailer
+from admin import router as admin_router
+from auth import get_admin_user, get_current_user, router as auth_router
 from database import Base, engine, get_db, migrate_sqlite
 from models import Booking, BookingStatus, Building, Room, User, UserRole
 from schemas import (AdminBookingOut, BookedSlot, BookingAdminUpdate,
                      BookingCreate, BookingOut, BuildingOut, RoomDetail, RoomOut)
 
 # ---------- Налаштування ----------
-ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "dev-admin-token")   # ОБОВ'ЯЗКОВО змінити на проді
 CORS_ORIGINS = [o.strip() for o in os.getenv(
     "CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",") if o.strip()]
 
@@ -45,14 +47,12 @@ app.add_middleware(
 
 
 app.include_router(auth_router)
+app.include_router(admin_router)
 
 
 # ---------- Допоміжні функції ----------
-def require_admin(x_admin_token: str = Header(default="")):
-    if not secrets.compare_digest(x_admin_token.encode(), ADMIN_TOKEN.encode()):
-        raise HTTPException(401, "Потрібна авторизація адміністратора")
-
-
+def _when(b: Booking) -> str:
+    return f"{b.start_time:%d.%m.%Y}, {b.start_time:%H:%M}–{b.end_time:%H:%M}"
 def find_conflict(db: Session, room_id: int, start: datetime, end: datetime,
                   exclude_id: int | None = None) -> Booking | None:
     """Два інтервали перетинаються, якщо start < чужий_end І end > чужий_start.
@@ -72,6 +72,9 @@ def to_admin_out(b: Booking) -> AdminBookingOut:
     out = AdminBookingOut.model_validate(b)
     out.room_name = b.room.name
     out.building_name = b.room.building.name
+    out.recipient_title = b.room.building.petition_recipient_title
+    out.recipient_name = b.room.building.petition_recipient_name
+    out.approver_name = b.room.building.petition_approver
     return out
 
 
@@ -129,7 +132,8 @@ def get_room(
 
 
 @app.post("/api/bookings", response_model=BookingOut, status_code=201)
-def create_booking(data: BookingCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def create_booking(data: BookingCreate, bg: BackgroundTasks, user: User = Depends(get_current_user),
+                   db: Session = Depends(get_db)):
     room = db.scalars(
         select(Room).options(joinedload(Room.building)).where(Room.id == data.room_id)
     ).first()
@@ -170,6 +174,11 @@ def create_booking(data: BookingCreate, user: User = Depends(get_current_user), 
     db.add(booking)
     db.commit()
     db.refresh(booking)
+    for admin_email in sorted(auth.ADMIN_EMAILS):          # сповіщаємо адміністраторів про нову заявку
+        bg.add_task(emailer.send_mail, admin_email, f"book_ukma: нова заявка — {booking.event_name}",
+                    f"Нова заявка на розгляді.\n\nЗахід: {booking.event_name}\nПриміщення: {room.name}\n"
+                    f"Коли: {_when(booking)}\nЗаявник: {booking.responsible_name} ({booking.email})\n\n"
+                    f"Розглянути: {auth.FRONTEND_URL}/#/admin", kind="new_booking")
     return booking
 
 
@@ -192,7 +201,7 @@ def get_booking(booking_id: int, user: User = Depends(get_current_user), db: Ses
 
 # ---------- Адмін-ендпоінти ----------
 @app.get("/api/admin/bookings", response_model=list[AdminBookingOut],
-         dependencies=[Depends(require_admin)])
+         dependencies=[Depends(get_admin_user)])
 def admin_list_bookings(
     status: BookingStatus | None = Query(None),
     room_id: int | None = Query(None),
@@ -207,8 +216,8 @@ def admin_list_bookings(
 
 
 @app.patch("/api/admin/bookings/{booking_id}", response_model=AdminBookingOut,
-           dependencies=[Depends(require_admin)])
-def admin_update_booking(booking_id: int, data: BookingAdminUpdate, db: Session = Depends(get_db)):
+           dependencies=[Depends(get_admin_user)])
+def admin_update_booking(booking_id: int, data: BookingAdminUpdate, bg: BackgroundTasks, db: Session = Depends(get_db)):
     booking = db.scalars(
         select(Booking).options(joinedload(Booking.room).joinedload(Room.building)).where(Booking.id == booking_id)
     ).first()
@@ -220,8 +229,18 @@ def admin_update_booking(booking_id: int, data: BookingAdminUpdate, db: Session 
             db, booking.room_id, booking.start_time, booking.end_time, exclude_id=booking.id):
         raise HTTPException(409, "Цей час уже зайнятий іншою заявкою — схвалення неможливе")
 
+    changed = booking.status != data.status
     booking.status = data.status
     booking.admin_comment = (data.admin_comment or "").strip() or None
     db.commit()
     db.refresh(booking)
+    if changed and data.status in (BookingStatus.approved, BookingStatus.rejected):   # повідомляємо заявника
+        ok = data.status == BookingStatus.approved
+        text = (f"Вашу заявку «{booking.event_name}» ({booking.room.name}, {_when(booking)}) "
+                + ("підтверджено. Слот закріплено за вами." if ok else "відхилено."))
+        if booking.admin_comment:
+            text += f"\n\nКоментар адміністраторки: {booking.admin_comment}"
+        text += f"\n\nПодання та статус: {auth.FRONTEND_URL}/#/petition/{booking.id}"
+        bg.add_task(emailer.send_mail, booking.email, f"book_ukma: заявку {'підтверджено' if ok else 'відхилено'}", text,
+                    kind="decision")
     return to_admin_out(booking)

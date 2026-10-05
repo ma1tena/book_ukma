@@ -109,7 +109,18 @@ def get_current_user(authorization: str | None = Header(default=None), db: Sessi
     sess = db.scalars(select(AuthSession).where(AuthSession.token_hash == _h(authorization[7:]))).first()
     if not sess or sess.expires_at < datetime.utcnow():
         raise HTTPException(401, "Сесія завершилась. Увійдіть знову")
-    return db.get(User, sess.user_id)
+    user = db.get(User, sess.user_id)
+    want = UserRole.admin if user.email in ADMIN_EMAILS else UserRole.user   # ADMIN_EMAILS — єдине джерело правди
+    if user.role != want:
+        user.role = want
+        db.commit()
+    return user
+
+
+def get_admin_user(user: User = Depends(get_current_user)) -> User:
+    if user.role != UserRole.admin:
+        raise HTTPException(403, "Потрібні права адміністратора")
+    return user
 
 
 # ───────── Схеми ─────────
