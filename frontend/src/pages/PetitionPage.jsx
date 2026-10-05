@@ -48,8 +48,8 @@ export default function PetitionPage({ id }) {
 
           <article className="mx-auto mt-6 max-w-[820px] rounded-2xl bg-white p-8 leading-7 text-navy-dark ring-1 ring-mist-200 sm:p-14 print:mt-0 print:max-w-none print:rounded-none print:p-0 print:ring-0">
             <div className="ml-auto w-fit text-right">
-              <p>{PETITION.recipientTitle}</p>
-              <p>{PETITION.recipientName}</p>
+              <p>{b.recipient_title || PETITION.recipientTitle}</p>
+              <p>{b.recipient_name || PETITION.recipientName}</p>
               <div className="mt-4">
                 {applicant && <p>{applicant}</p>}
                 <p>{shortName(b.responsible_name)}</p>
@@ -81,7 +81,7 @@ export default function PetitionPage({ id }) {
             <div className="mt-8">
               <p><b>Погоджено:</b></p>
               {b.status === "approved"
-                ? <p className="mt-1">{PETITION.approver}</p>
+                ? <p className="mt-1">{b.approver_name || PETITION.approver}</p>
                 : <div className="mt-6 w-56 border-b border-navy-dark/40" aria-hidden="true" />}
             </div>
           </article>

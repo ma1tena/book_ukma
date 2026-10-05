@@ -6,6 +6,7 @@ function parse() {
   if (a === "building" && +b) return { name: "building", id: +b };
   if (a === "room" && +b) return { name: "room", id: +b };
   if (a === "my") return { name: "my" };
+  if (a === "admin") return { name: "admin", tab: b === "content" ? "content" : "bookings" };
   if (a === "petition" && +b) return { name: "petition", id: +b };
   if (a === "auth") return { name: "auth" };          // повернення з Office 365
   return { name: "home" };

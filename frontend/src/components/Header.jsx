@@ -49,6 +49,7 @@ export default function Header() {
             {ready && (user ? (
               <div className="flex items-center gap-3 text-navy">
                 <a href="#/my" className="hidden text-lg font-semibold transition hover:text-blue md:block">Мої заявки</a>
+                {user.role === "admin" && <a href="#/admin" className="hidden rounded-md border-2 border-gold px-3 py-1 text-sm font-bold uppercase tracking-wider text-navy transition hover:bg-gold/10 md:block">Кабінет</a>}
                 <span className="hidden items-center gap-2 font-semibold md:flex" title={user.email}><UserRound size={20} className="text-gold" />{shortName}</span>
                 <button onClick={logout} aria-label="Вийти" title="Вийти" className="rounded-full p-2 text-slate transition hover:bg-mist-100 hover:text-navy"><LogOut size={20} /></button>
               </div>

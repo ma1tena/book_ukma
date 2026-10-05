@@ -56,3 +56,12 @@ export const microsoftLoginUrl = `${BASE}/api/auth/microsoft/login`;
 export const createBooking = (data) => post("/api/bookings", data);
 export const myBookings = () => request("/api/bookings/mine");
 export const getBooking = (id) => request(`/api/bookings/${id}`);
+
+// ───── Кабінет адміністратора ─────
+const patch = (path, body) => request(path, { method: "PATCH", body: JSON.stringify(body) });
+export const adminBookings = () => request("/api/admin/bookings");
+export const adminDecide = (id, status, admin_comment) => patch(`/api/admin/bookings/${id}`, { status, admin_comment });
+export const adminBuildings = () => request("/api/admin/buildings");
+export const adminUpdateBuilding = (id, data) => patch(`/api/admin/buildings/${id}`, data);
+export const adminUpdateRoom = (id, data) => patch(`/api/admin/rooms/${id}`, data);
+export const adminCreateRoom = (buildingId, data) => post(`/api/admin/buildings/${buildingId}/rooms`, data);
