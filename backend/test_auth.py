@@ -196,3 +196,14 @@ def test_microsoft_rejects_foreign_tenant_and_bad_nonce(ms, monkeypatch):
     assert "error=" in _callback(ms, monkeypatch, tid="other-tenant").headers["location"]
     assert "error=" in _callback(ms, monkeypatch, nonce="forged").headers["location"]
     assert "error=" in ms.get("/api/auth/microsoft/callback", params={"code": "x", "state": "garbage"}, follow_redirects=False).headers["location"]
+
+
+# ───────── Роль адміністратора за ADMIN_EMAILS ─────────
+def test_admin_role_follows_admin_emails(client, monkeypatch):
+    tok = register(client).json()["token"]
+    h = {"Authorization": f"Bearer {tok}"}
+    assert client.get("/api/auth/me", headers=h).json()["role"] == "user"
+    monkeypatch.setattr(auth, "ADMIN_EMAILS", {EMAIL})                  # додали пошту в налаштування — роль з'являється без перереєстрації
+    assert client.get("/api/auth/me", headers=h).json()["role"] == "admin"
+    monkeypatch.setattr(auth, "ADMIN_EMAILS", set())                    # прибрали — права знімаються
+    assert client.get("/api/auth/me", headers=h).json()["role"] == "user"

@@ -9,14 +9,15 @@ from sqlalchemy.pool import StaticPool
 import auth
 import init_db
 from database import Base, get_db
-from models import User
+from models import User, UserRole
 from main import app
 
-ADMIN = {"X-Admin-Token": "dev-admin-token"}
+ADMIN: dict = {}      # заповнюється у фікстурі токеном адміністратора
 
 
 @pytest.fixture()
-def client():
+def client(monkeypatch):
+    monkeypatch.setattr(auth, "ADMIN_EMAILS", {"admin@ukma.edu.ua"})   # роль адміна задається лише цим списком
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False},
                            poolclass=StaticPool)
     Base.metadata.create_all(engine)
@@ -25,9 +26,12 @@ def client():
         init_db.seed(db)
         ua = User(email="student@ukma.edu.ua", full_name="Студент Тест Іванович", faculty_course="ФІ-2", phone="+380501112233")
         ub = User(email="other@ukma.edu.ua", full_name="Інша Особа Петрівна", faculty_course="ФГН-1", phone="+380671112233")
-        db.add_all([ua, ub])
+        uc = User(email="admin@ukma.edu.ua", full_name="Адмін Тест Іванівна", role=UserRole.admin)
+        db.add_all([ua, ub, uc])
         db.commit()
-        tok_a, tok_b = auth.create_session(db, ua), auth.create_session(db, ub)
+        tok_a, tok_b, tok_c = (auth.create_session(db, u) for u in (ua, ub, uc))
+        ADMIN.clear()
+        ADMIN["Authorization"] = f"Bearer {tok_c}"
 
     def override():
         db = Session()
@@ -118,9 +122,12 @@ def test_business_validation(client):
     assert client.post("/api/bookings", json=past).status_code == 422
 
 
-def test_admin_requires_token(client):
-    assert client.get("/api/admin/bookings").status_code == 401
-    assert client.get("/api/admin/bookings", headers={"X-Admin-Token": "wrong"}).status_code == 401
+def test_admin_requires_admin_role(client):
+    anon = TestClient(app)
+    assert anon.get("/api/admin/bookings").status_code == 401                 # без входу
+    assert client.get("/api/admin/bookings").status_code == 403               # звичайний користувач
+    assert client.get("/api/admin/buildings").status_code == 403
+    assert client.get("/api/admin/bookings", headers=ADMIN).status_code == 200
 
 
 def test_admin_list_filter_and_update(client):
