@@ -24,6 +24,9 @@ class Building(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)   # False => «Незабаром»
     sort_order: Mapped[int] = mapped_column(Integer, default=100)     # КМЦ = 0 (зверху)
+    petition_recipient_title: Mapped[str] = mapped_column(String(150), default="")   # «Керівниці КМЦ НаУКМА»
+    petition_recipient_name: Mapped[str] = mapped_column(String(100), default="")    # «Осьмак В. А.»
+    petition_approver: Mapped[str] = mapped_column(String(100), default="")          # «Владислава ОСЬМАК»
 
     rooms: Mapped[list["Room"]] = relationship(
         back_populates="building", cascade="all, delete-orphan"

@@ -29,7 +29,11 @@ def migrate_sqlite() -> None:
     """Додає нові колонки до вже існуючих таблиць SQLite — без втрати даних і без --reset."""
     if not DATABASE_URL.startswith("sqlite"):
         return
-    wanted = {"bookings": {
+    wanted = {"buildings": {
+        "petition_recipient_title": "VARCHAR(150) DEFAULT ''",
+        "petition_recipient_name": "VARCHAR(100) DEFAULT ''",
+        "petition_approver": "VARCHAR(100) DEFAULT ''",
+    }, "bookings": {
         "applicant_role": "VARCHAR(100) DEFAULT ''",
         "organizers": "VARCHAR(200) DEFAULT ''",
         "contact_name": "VARCHAR(150) DEFAULT ''",
@@ -42,3 +46,7 @@ def migrate_sqlite() -> None:
             for name, ddl in cols.items():
                 if have and name not in have:
                     conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}")
+        if "petition_approver" in {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(buildings)")}:
+            conn.exec_driver_sql(                      # початкові дані подання для КМЦ (лише якщо порожні)
+                "UPDATE buildings SET petition_recipient_title='Керівниці КМЦ НаУКМА', petition_recipient_name='Осьмак В. А.', "
+                "petition_approver='Владислава ОСЬМАК' WHERE short_name='КМЦ' AND COALESCE(petition_recipient_title,'')=''")

@@ -137,3 +137,6 @@ class RoomDetail(RoomOut):
 class AdminBookingOut(BookingOut):
     room_name: str = ""
     building_name: str = ""
+    recipient_title: str = ""   # дані подання беруться з корпусу
+    recipient_name: str = ""
+    approver_name: str = ""
