@@ -42,22 +42,31 @@ export default function Header() {
             <img src="/logo-naukma.svg" alt="НаУКМА" fetchpriority="high"
                  className={`w-auto transition-all ${scrolled ? "h-12 md:h-14" : "h-16 md:h-20"}`} />
           </a>
-          <nav className="flex items-center gap-6 md:gap-10">
-            <button onClick={() => goSection("contacts")} className="hidden text-lg font-semibold text-navy transition hover:text-blue sm:block">
+          {/* Усі пункти — прямі діти одного flex з однаковим gap, тож відстані рівні */}
+          <nav className="flex items-center gap-4 text-navy sm:gap-6 md:gap-8">
+            <button onClick={() => goSection("contacts")} className="hidden text-lg font-semibold transition hover:text-blue sm:block">
               Контакти
             </button>
-            {ready && (user ? (
-              <div className="flex items-center gap-3 text-navy">
-                <a href="#/my" className="hidden text-lg font-semibold transition hover:text-blue md:block">Мої заявки</a>
-                {user.role === "admin" && <a href="#/admin" className="hidden rounded-md border-2 border-gold px-3 py-1 text-sm font-bold uppercase tracking-wider text-navy transition hover:bg-gold/10 md:block">Кабінет</a>}
-                <span className="hidden items-center gap-2 font-semibold md:flex" title={user.email}><UserRound size={20} className="text-gold" />{shortName}</span>
-                <button onClick={logout} aria-label="Вийти" title="Вийти" className="rounded-full p-2 text-slate transition hover:bg-mist-100 hover:text-navy"><LogOut size={20} /></button>
-              </div>
-            ) : (
-              <button onClick={() => openAuth({ view: "login" })} className="text-lg font-semibold text-navy transition hover:text-blue">Увійти</button>
-            ))}
+            {ready && user && (
+              <a href="#/cabinet" className="rounded-md border-2 border-gold px-3 py-1 text-sm font-bold uppercase tracking-wider transition hover:bg-gold/10">
+                Кабінет
+              </a>
+            )}
+            {ready && user && (
+              <span className="hidden items-center gap-2 text-lg font-semibold md:flex" title={user.email}>
+                <UserRound size={20} className="text-gold" />{shortName}
+              </span>
+            )}
+            {ready && user && (
+              <button onClick={logout} aria-label="Вийти" title="Вийти" className="text-slate transition hover:text-navy">
+                <LogOut size={20} />
+              </button>
+            )}
+            {ready && !user && (
+              <button onClick={() => openAuth({ view: "login" })} className="text-lg font-semibold transition hover:text-blue">Увійти</button>
+            )}
             <button onClick={() => goSection("buildings")}
-                    className="rounded-md border-2 border-navy px-5 py-2.5 text-sm font-bold uppercase tracking-widest text-navy transition hover:border-gold hover:bg-mist-50 md:px-7 md:py-3">
+                    className="rounded-md border-2 border-navy px-4 py-2.5 text-sm font-bold uppercase tracking-widest transition hover:border-gold hover:bg-mist-50 md:px-7 md:py-3">
               Обрати корпус
             </button>
           </nav>

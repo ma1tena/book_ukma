@@ -99,7 +99,7 @@ function RoomForm({ room, buildingId, onSaved, onCancel }) {
   );
 }
 
-function BuildingCard({ b: initial, defaultOpen }) {
+function BuildingCard({ b: initial, defaultOpen, isAdmin }) {
   const [b, setB] = useState(initial);
   const [rooms, setRooms] = useState(initial.rooms);
   const [open, setOpen] = useState(defaultOpen);
@@ -123,6 +123,7 @@ function BuildingCard({ b: initial, defaultOpen }) {
       </button>
       {open && (
         <div className="space-y-8 border-t border-mist-200 p-6">
+          {isAdmin && (
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <Row label="Назва корпусу"><input className={input} value={f.name} onChange={set("name")} /></Row>
@@ -142,6 +143,7 @@ function BuildingCard({ b: initial, defaultOpen }) {
             </div>
             <div className="flex flex-wrap items-center gap-4"><button onClick={save} disabled={st.busy} className={saveBtn}>{st.busy ? "Зберігаємо…" : "Зберегти корпус"}</button><Status s={st} /></div>
           </div>
+          )}
 
           <div className="space-y-5">
             <div className="text-sm font-bold uppercase tracking-wider text-slate">Приміщення</div>
@@ -154,9 +156,9 @@ function BuildingCard({ b: initial, defaultOpen }) {
                 <div className="px-3 pb-3"><RoomForm room={r} buildingId={b.id} onSaved={upsert} /></div>
               </details>
             ))}
-            {adding
+            {isAdmin && (adding
               ? <RoomForm buildingId={b.id} onSaved={(r) => { upsert(r); setAdding(false); }} onCancel={() => setAdding(false)} />
-              : <button onClick={() => setAdding(true)} className="inline-flex items-center gap-2 rounded-md border-2 border-dashed border-mist-200 px-5 py-3 font-semibold text-navy transition hover:border-gold"><Plus size={18} className="text-gold" />Додати приміщення</button>}
+              : <button onClick={() => setAdding(true)} className="inline-flex items-center gap-2 rounded-md border-2 border-dashed border-mist-200 px-5 py-3 font-semibold text-navy transition hover:border-gold"><Plus size={18} className="text-gold" />Додати приміщення</button>)}
           </div>
         </div>
       )}
@@ -164,13 +166,14 @@ function BuildingCard({ b: initial, defaultOpen }) {
   );
 }
 
-export default function ContentTab() {
+export default function ContentTab({ isAdmin }) {
   const { data, error, loading, reload } = useFetch(api.adminBuildings, []);
   return (
     <div className="space-y-4">
       {error && <ErrorBanner message={error} onRetry={reload} />}
       {loading && !data && <p className="text-center text-slate">Завантаження…</p>}
-      {data?.map((b) => <BuildingCard key={b.id} b={b} defaultOpen={b.is_active} />)}
+      {data?.length === 0 && <p className="text-center text-slate">За вами поки не закріплено жодного приміщення.</p>}
+      {data?.map((b) => <BuildingCard key={b.id} b={b} isAdmin={isAdmin} defaultOpen={b.is_active || !isAdmin} />)}
     </div>
   );
 }

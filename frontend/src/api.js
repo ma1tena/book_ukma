@@ -65,3 +65,5 @@ export const adminBuildings = () => request("/api/admin/buildings");
 export const adminUpdateBuilding = (id, data) => patch(`/api/admin/buildings/${id}`, data);
 export const adminUpdateRoom = (id, data) => patch(`/api/admin/rooms/${id}`, data);
 export const adminCreateRoom = (buildingId, data) => post(`/api/admin/buildings/${buildingId}/rooms`, data);
+export const adminManagers = () => request("/api/admin/managers");
+export const adminSetManager = (email, room_ids) => request("/api/admin/managers", { method: "PUT", body: JSON.stringify({ email, room_ids }) });

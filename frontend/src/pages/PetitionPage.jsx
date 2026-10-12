@@ -20,8 +20,8 @@ export default function PetitionPage({ id }) {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-12 md:px-6">
-      <a href="#/my" className="group inline-flex items-center gap-2 text-slate transition hover:text-navy print:hidden">
-        <ArrowLeft size={18} className="text-gold transition-transform group-hover:-translate-x-1" /> Мої заявки
+      <a href="#/cabinet" className="group inline-flex items-center gap-2 text-slate transition hover:text-navy print:hidden">
+        <ArrowLeft size={18} className="text-gold transition-transform group-hover:-translate-x-1" /> Кабінет
       </a>
       {error && (
         <div className="print:hidden">

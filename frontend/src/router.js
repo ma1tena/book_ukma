@@ -5,8 +5,9 @@ function parse() {
   const [, a, b] = (window.location.hash.replace(/^#/, "") || "/").split("/");
   if (a === "building" && +b) return { name: "building", id: +b };
   if (a === "room" && +b) return { name: "room", id: +b };
-  if (a === "my") return { name: "my" };
-  if (a === "admin") return { name: "admin", tab: b === "content" ? "content" : "bookings" };
+  if (a === "cabinet") return { name: "cabinet", tab: ["content", "managers", "mine"].includes(b) ? b : "bookings" };
+  if (a === "my") return { name: "cabinet", tab: "mine" };          // старі посилання
+  if (a === "admin") return { name: "cabinet", tab: b === "content" ? "content" : "bookings" };
   if (a === "petition" && +b) return { name: "petition", id: +b };
   if (a === "auth") return { name: "auth" };          // повернення з Office 365
   return { name: "home" };

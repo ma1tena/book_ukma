@@ -103,7 +103,7 @@ export default function QuizModal({ room, selection, onClose, onCreated, onConfl
             <p className="mx-auto mt-3 max-w-md text-slate">Статус: <b className="text-navy">«На розгляді»</b>. Адміністраторка розгляне її, а її коментар ви побачите в розділі «Мої заявки».</p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <a href={`#/petition/${done.id}`} onClick={onClose} className={arrowBtn}>Переглянути подання <ArrowRight size={18} className="text-gold transition-transform group-hover:translate-x-1" /></a>
-              <a href="#/my" onClick={onClose} className="rounded-md border-2 border-mist-200 px-6 py-3 font-semibold text-navy transition hover:border-gold">Мої заявки</a>
+              <a href="#/cabinet/mine" onClick={onClose} className="rounded-md border-2 border-mist-200 px-6 py-3 font-semibold text-navy transition hover:border-gold">Мої заявки</a>
             </div>
           </div>
         ) : (
