@@ -2,16 +2,17 @@
 import re
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import func, select
+from pydantic import BaseModel, EmailStr, Field, field_validator
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session, joinedload
 
-from auth import get_admin_user
+from auth import allowed_room_ids, can_manage_room, get_admin_user, get_staff_user
 from database import get_db
-from models import Building, Room
+from models import AdminGrant, Building, Room, User
 from schemas import BuildingOut, RoomOut
 
-router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(get_admin_user)])
+router = APIRouter(prefix="/api/admin", tags=["admin"])
+SUPER = [Depends(get_admin_user)]          # дії лише головного адміністратора
 
 PHOTO_RE = re.compile(r"^(/[^\s]+|https://[^\s]+)$")     # власні файли сайту або https-посилання (не javascript: тощо)
 
@@ -82,15 +83,23 @@ def _apply(room: Room, data: BaseModel) -> None:
     room.photo_url = room.photos[0] if room.photos else ""          # обкладинка = перше фото
 
 
+def _building_out(b: Building, allowed: set[int] | None) -> BuildingAdminOut:
+    """Корпус із приміщеннями; для адміністратора приміщень — лише закріплені за ним."""
+    out = BuildingAdminOut.model_validate(b)
+    rooms = sorted(b.rooms, key=lambda r: (r.sort_order, r.id))
+    out.rooms = [RoomOut.model_validate(r) for r in rooms if allowed is None or r.id in allowed]
+    return out
+
+
 @router.get("/buildings", response_model=list[BuildingAdminOut])
-def list_buildings(db: Session = Depends(get_db)):
+def list_buildings(user: User = Depends(get_staff_user), db: Session = Depends(get_db)):
+    allowed = allowed_room_ids(db, user)
     rows = db.scalars(select(Building).options(joinedload(Building.rooms)).order_by(Building.sort_order, Building.id)).unique().all()
-    for b in rows:
-        b.rooms.sort(key=lambda r: (r.sort_order, r.id))
-    return rows
+    result = [_building_out(b, allowed) for b in rows]
+    return [b for b in result if allowed is None or b.rooms]
 
 
-@router.patch("/buildings/{building_id}", response_model=BuildingAdminOut)
+@router.patch("/buildings/{building_id}", response_model=BuildingAdminOut, dependencies=SUPER)
 def update_building(building_id: int, data: BuildingUpdate, db: Session = Depends(get_db)):
     b = db.get(Building, building_id)
     if not b:
@@ -100,14 +109,13 @@ def update_building(building_id: int, data: BuildingUpdate, db: Session = Depend
             setattr(b, field, value.strip() if isinstance(value, str) else value)
     db.commit()
     db.refresh(b)
-    b.rooms.sort(key=lambda r: (r.sort_order, r.id))
-    return b
+    return _building_out(b, None)
 
 
 @router.patch("/rooms/{room_id}", response_model=RoomOut)
-def update_room(room_id: int, data: RoomUpdate, db: Session = Depends(get_db)):
+def update_room(room_id: int, data: RoomUpdate, user: User = Depends(get_staff_user), db: Session = Depends(get_db)):
     room = db.get(Room, room_id)
-    if not room:
+    if not room or not can_manage_room(db, user, room_id):      # чужі приміщення для менеджера «не існують»
         raise HTTPException(404, "Приміщення не знайдено")
     _apply(room, data)
     db.commit()
@@ -115,7 +123,7 @@ def update_room(room_id: int, data: RoomUpdate, db: Session = Depends(get_db)):
     return room
 
 
-@router.post("/buildings/{building_id}/rooms", response_model=RoomOut, status_code=201)
+@router.post("/buildings/{building_id}/rooms", response_model=RoomOut, status_code=201, dependencies=SUPER)
 def create_room(building_id: int, data: RoomCreate, db: Session = Depends(get_db)):
     if not db.get(Building, building_id):
         raise HTTPException(404, "Корпус не знайдено")
@@ -127,3 +135,47 @@ def create_room(building_id: int, data: RoomCreate, db: Session = Depends(get_db
     db.commit()
     db.refresh(room)
     return room
+
+
+# ───────── Адміністратори приміщень (лише головний адміністратор) ─────────
+class ManagerOut(BaseModel):
+    email: str
+    full_name: str = ""
+    room_ids: list[int]
+
+
+class ManagerIn(BaseModel):
+    email: EmailStr
+    room_ids: list[int] = Field(default_factory=list, max_length=200)
+
+    @field_validator("email")
+    @classmethod
+    def lower(cls, v: str) -> str:
+        return v.lower()
+
+
+def _managers(db: Session) -> list[ManagerOut]:
+    grants: dict[str, list[int]] = {}
+    for g in db.scalars(select(AdminGrant).order_by(AdminGrant.email, AdminGrant.room_id)):
+        grants.setdefault(g.email, []).append(g.room_id)
+    names = {u.email: u.full_name for u in db.scalars(select(User).where(User.email.in_(grants)))} if grants else {}
+    return [ManagerOut(email=e, full_name=names.get(e, ""), room_ids=ids) for e, ids in grants.items()]
+
+
+@router.get("/managers", response_model=list[ManagerOut], dependencies=SUPER)
+def list_managers(db: Session = Depends(get_db)):
+    return _managers(db)
+
+
+@router.put("/managers", response_model=ManagerOut, dependencies=SUPER)
+def set_manager(data: ManagerIn, db: Session = Depends(get_db)):
+    """Задає повний перелік приміщень адміністратора. Порожній список — доступ знімається."""
+    ids = sorted(set(data.room_ids))
+    found = set(db.scalars(select(Room.id).where(Room.id.in_(ids)))) if ids else set()
+    if found != set(ids):
+        raise HTTPException(422, "Серед обраних є неіснуюче приміщення")
+    db.execute(delete(AdminGrant).where(AdminGrant.email == data.email))
+    db.add_all(AdminGrant(email=data.email, room_id=rid) for rid in ids)
+    db.commit()
+    name = db.scalar(select(User.full_name).where(User.email == data.email)) or ""
+    return ManagerOut(email=data.email, full_name=name, room_ids=ids)

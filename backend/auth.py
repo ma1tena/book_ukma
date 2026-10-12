@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 
 import emailer
 from database import get_db
-from models import AccountType, AuthSession, EmailCode, User, UserRole
+from models import AccountType, AdminGrant, AuthSession, EmailCode, User, UserRole
 from schemas import PHONE_RE
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -96,7 +96,21 @@ def check_code(db: Session, email: str, purpose: str, code: str) -> EmailCode:
     return row
 
 
+def grant_room_ids(db: Session, email: str) -> set[int]:
+    return set(db.scalars(select(AdminGrant.room_id).where(AdminGrant.email == email)))
+
+
+def sync_role(db: Session, user: User) -> None:
+    """Роль завжди виводиться з налаштувань: ADMIN_EMAILS → admin; є закріплені приміщення → manager; інакше user."""
+    want = (UserRole.admin if user.email in ADMIN_EMAILS
+            else UserRole.manager if grant_room_ids(db, user.email) else UserRole.user)
+    if user.role != want:
+        user.role = want
+        db.commit()
+
+
 def create_session(db: Session, user: User) -> str:
+    sync_role(db, user)
     token = secrets.token_urlsafe(32)
     db.add(AuthSession(token_hash=_h(token), user_id=user.id, expires_at=datetime.utcnow() + SESSION_TTL))
     db.commit()
@@ -110,17 +124,34 @@ def get_current_user(authorization: str | None = Header(default=None), db: Sessi
     if not sess or sess.expires_at < datetime.utcnow():
         raise HTTPException(401, "Сесія завершилась. Увійдіть знову")
     user = db.get(User, sess.user_id)
-    want = UserRole.admin if user.email in ADMIN_EMAILS else UserRole.user   # ADMIN_EMAILS — єдине джерело правди
-    if user.role != want:
-        user.role = want
-        db.commit()
+    sync_role(db, user)
+    return user
+
+
+def get_staff_user(user: User = Depends(get_current_user)) -> User:
+    """Адміністратор або адміністратор приміщень."""
+    if user.role not in (UserRole.admin, UserRole.manager):
+        raise HTTPException(403, "Потрібні права адміністратора")
     return user
 
 
 def get_admin_user(user: User = Depends(get_current_user)) -> User:
+    """Лише головний адміністратор."""
     if user.role != UserRole.admin:
-        raise HTTPException(403, "Потрібні права адміністратора")
+        raise HTTPException(403, "Ця дія доступна лише головному адміністратору")
     return user
+
+
+def allowed_room_ids(db: Session, user: User) -> set[int] | None:
+    """None — усі приміщення (головний адміністратор); інакше — закріплені за поштою."""
+    return None if user.role == UserRole.admin else grant_room_ids(db, user.email)
+
+
+def can_manage_room(db: Session, user: User, room_id: int) -> bool:
+    allowed = allowed_room_ids(db, user)
+    if user.role not in (UserRole.admin, UserRole.manager):
+        return False
+    return allowed is None or room_id in allowed
 
 
 # ───────── Схеми ─────────

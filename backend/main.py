@@ -12,9 +12,9 @@ from sqlalchemy.orm import Session, joinedload
 import auth
 import emailer
 from admin import router as admin_router
-from auth import get_admin_user, get_current_user, router as auth_router
+from auth import allowed_room_ids, can_manage_room, get_current_user, get_staff_user, router as auth_router
 from database import Base, engine, get_db, migrate_sqlite
-from models import Booking, BookingStatus, Building, Room, User, UserRole
+from models import AdminGrant, Booking, BookingStatus, Building, Room, User
 from schemas import (AdminBookingOut, BookedSlot, BookingAdminUpdate,
                      BookingCreate, BookingOut, BuildingOut, RoomDetail, RoomOut)
 
@@ -174,11 +174,12 @@ def create_booking(data: BookingCreate, bg: BackgroundTasks, user: User = Depend
     db.add(booking)
     db.commit()
     db.refresh(booking)
-    for admin_email in sorted(auth.ADMIN_EMAILS):          # сповіщаємо адміністраторів про нову заявку
+    managers = set(db.scalars(select(AdminGrant.email).where(AdminGrant.room_id == room.id)))
+    for admin_email in sorted(auth.ADMIN_EMAILS | managers):   # головні адміни + адміністратори цього приміщення
         bg.add_task(emailer.send_mail, admin_email, f"book_ukma: нова заявка — {booking.event_name}",
                     f"Нова заявка на розгляді.\n\nЗахід: {booking.event_name}\nПриміщення: {room.name}\n"
                     f"Коли: {_when(booking)}\nЗаявник: {booking.responsible_name} ({booking.email})\n\n"
-                    f"Розглянути: {auth.FRONTEND_URL}/#/admin", kind="new_booking")
+                    f"Розглянути: {auth.FRONTEND_URL}/#/cabinet", kind="new_booking")
     return booking
 
 
@@ -194,17 +195,17 @@ def my_bookings(user: User = Depends(get_current_user), db: Session = Depends(ge
 def get_booking(booking_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     b = db.scalars(select(Booking).options(joinedload(Booking.room).joinedload(Room.building))
                    .where(Booking.id == booking_id)).first()
-    if not b or (b.user_id != user.id and user.role != UserRole.admin):
+    if not b or (b.user_id != user.id and not can_manage_room(db, user, b.room_id)):
         raise HTTPException(404, "Заявку не знайдено")
     return to_admin_out(b)
 
 
 # ---------- Адмін-ендпоінти ----------
-@app.get("/api/admin/bookings", response_model=list[AdminBookingOut],
-         dependencies=[Depends(get_admin_user)])
+@app.get("/api/admin/bookings", response_model=list[AdminBookingOut])
 def admin_list_bookings(
     status: BookingStatus | None = Query(None),
     room_id: int | None = Query(None),
+    user: User = Depends(get_staff_user),
     db: Session = Depends(get_db),
 ):
     q = select(Booking).options(joinedload(Booking.room).joinedload(Room.building)).order_by(Booking.created_at.desc())
@@ -212,16 +213,19 @@ def admin_list_bookings(
         q = q.where(Booking.status == status)
     if room_id:
         q = q.where(Booking.room_id == room_id)
+    allowed = allowed_room_ids(db, user)
+    if allowed is not None:                                  # адміністратор приміщень бачить лише свої
+        q = q.where(Booking.room_id.in_(allowed))
     return [to_admin_out(b) for b in db.scalars(q).all()]
 
 
-@app.patch("/api/admin/bookings/{booking_id}", response_model=AdminBookingOut,
-           dependencies=[Depends(get_admin_user)])
-def admin_update_booking(booking_id: int, data: BookingAdminUpdate, bg: BackgroundTasks, db: Session = Depends(get_db)):
+@app.patch("/api/admin/bookings/{booking_id}", response_model=AdminBookingOut)
+def admin_update_booking(booking_id: int, data: BookingAdminUpdate, bg: BackgroundTasks,
+                         user: User = Depends(get_staff_user), db: Session = Depends(get_db)):
     booking = db.scalars(
         select(Booking).options(joinedload(Booking.room).joinedload(Room.building)).where(Booking.id == booking_id)
     ).first()
-    if not booking:
+    if not booking or not can_manage_room(db, user, booking.room_id):
         raise HTTPException(404, "Заявку не знайдено")
 
     # повторне схвалення раніше відхиленої заявки — перевіряємо, що час не зайняли за цей час

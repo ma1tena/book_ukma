@@ -2,7 +2,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import (JSON, Boolean, CheckConstraint, DateTime, Enum,
+from sqlalchemy import (UniqueConstraint, JSON, Boolean, CheckConstraint, DateTime, Enum,
                         ForeignKey, Index, Integer, String, Text)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -109,7 +109,8 @@ class AccountType(str, enum.Enum):
 
 class UserRole(str, enum.Enum):
     user = "user"
-    admin = "admin"
+    manager = "manager"   # адміністратор лише закріплених приміщень
+    admin = "admin"       # головний адміністратор (ADMIN_EMAILS): усе + призначення менеджерів
 
 
 class User(Base):
@@ -149,3 +150,14 @@ class AuthSession(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class AdminGrant(Base):
+    """Закріплення приміщення за адміністратором. Прив'язка за поштою — діє ще до реєстрації людини."""
+    __tablename__ = "admin_grants"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(150), index=True)
+    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"), index=True)
+
+    __table_args__ = (UniqueConstraint("email", "room_id", name="uq_grant_email_room"),)
