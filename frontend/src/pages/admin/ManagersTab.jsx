@@ -4,7 +4,7 @@ import * as api from "../../api";
 import ErrorBanner from "../../components/ErrorBanner";
 import { useFetch } from "../../hooks";
 
-const input = "w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base text-navy-dark outline-none transition placeholder:text-slate-300 focus:border-blue focus:ring-2 focus:ring-blue/20";
+const input = "w-full rounded-lg border border-line bg-white px-4 py-2.5 text-base text-navy-dark outline-none transition placeholder:text-slate-400 focus:border-blue focus:ring-2 focus:ring-blue/40";
 const saveBtn = "rounded-md border-2 border-navy bg-navy px-6 py-2.5 font-semibold text-white transition hover:border-gold hover:bg-white hover:text-navy disabled:opacity-60";
 
 /** Перелік приміщень з чекбоксами, згруповано за корпусами */

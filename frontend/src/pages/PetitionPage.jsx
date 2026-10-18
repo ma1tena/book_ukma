@@ -7,10 +7,12 @@ import { useFetch } from "../hooks";
 import { STATUS } from "../utils/status";
 import { fmt, fmtTime } from "../utils/time";
 import { shortName } from "../utils/names";
+import { useMeta } from "../seo";
 
 export default function PetitionPage({ id }) {
   const { openAuth } = useAuth();
   const { data: b, error, loading, reload } = useFetch(() => api.getBooking(id), [id]);
+  useMeta({ title: `Подання №${id}`, noindex: true });
 
   const s = b && new Date(b.start_time);
   const e = b && new Date(b.end_time);
@@ -19,8 +21,8 @@ export default function PetitionPage({ id }) {
   const st = b && STATUS[b.status];
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-12 md:px-6">
-      <a href="#/cabinet" className="group inline-flex items-center gap-2 text-slate transition hover:text-navy print:hidden">
+    <main id="content" tabIndex={-1} className="mx-auto max-w-6xl px-page py-16 outline-none">
+      <a href="/cabinet" className="group inline-flex items-center gap-2 py-1 text-slate transition hover:text-navy print:hidden">
         <ArrowLeft size={18} className="text-gold transition-transform group-hover:-translate-x-1" /> Кабінет
       </a>
       {error && (

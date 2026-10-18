@@ -1,10 +1,11 @@
-import { ArrowLeft, Eye, EyeOff, GraduationCap, KeyRound, Mail, Phone, ShieldCheck, User, UserRound, X } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, GraduationCap, KeyRound, Mail, Phone, ShieldCheck, User, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import * as api from "../api";
 import { useAuth } from "../auth";
 import { CONTACT } from "../config";
+import Modal from "./Modal";
 
-const inputCls = "w-full rounded-lg border border-slate-200 bg-white py-4 pl-14 pr-4 text-lg text-navy-dark outline-none transition placeholder:text-slate focus:border-blue focus:ring-2 focus:ring-blue/20";
+const inputCls = "w-full rounded-lg border border-line bg-white py-4 pl-14 pr-4 text-lg text-navy-dark outline-none transition placeholder:text-slate focus:border-blue focus:ring-2 focus:ring-blue/40";
 
 function Field({ icon: Icon, right, ...props }) {
   return (
@@ -36,7 +37,7 @@ const MsLogo = () => (
 
 function Office365({ enabled }) {
   const go = () => {
-    sessionStorage.setItem("book_ukma_return", window.location.hash || "#/");   // повернемось на цю ж сторінку
+    sessionStorage.setItem("book_ukma_return", window.location.pathname + window.location.search);   // повернемось на цю ж сторінку
     window.location.href = api.microsoftLoginUrl;
   };
   return (
@@ -200,27 +201,18 @@ export default function AuthModal() {
   const [view, setView] = useState("login");
   const [providers, setProviders] = useState({ microsoft: false, guests_allowed: false, email_dev_mode: false });
   useEffect(() => { if (modal) { setView(modal.view); api.getProviders().then(setProviders).catch(() => {}); } }, [modal]);
-  useEffect(() => {
-    if (!modal) return;
-    const on = (e) => e.key === "Escape" && closeAuth();
-    window.addEventListener("keydown", on);
-    return () => window.removeEventListener("keydown", on);
-  }, [modal, closeAuth]);
   if (!modal) return null;
 
   const props = { go: setView, providers };
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-navy-dark/60 p-4 sm:items-center" onClick={closeAuth}>
-      <div className="relative my-6 w-full max-w-[520px] rounded-2xl bg-white p-6 shadow-2xl sm:p-10" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={TITLES[view]}>
-        <button onClick={closeAuth} aria-label="Закрити" className="absolute right-4 top-4 rounded-full p-2 text-slate transition hover:bg-mist-100 hover:text-navy"><X size={22} /></button>
-        <h2 className="mb-6 pr-8 text-3xl font-bold text-navy">{TITLES[view]}</h2>
-        {view === "login" && <LoginView {...props} />}
-        {view === "register" && <RegisterView {...props} />}
-        {view === "reset" && <ResetView {...props} />}
-        <div className="mt-6 text-center">
-          <a href={`mailto:${CONTACT.email}`} className="text-lg font-semibold text-blue hover:underline">Служба підтримки</a>
-        </div>
+    <Modal label={TITLES[view]} onClose={closeAuth}>
+      <h2 className="mb-6 pr-8 text-3xl font-bold text-navy">{TITLES[view]}</h2>
+      {view === "login" && <LoginView {...props} />}
+      {view === "register" && <RegisterView {...props} />}
+      {view === "reset" && <ResetView {...props} />}
+      <div className="mt-6 text-center">
+        <a href={`mailto:${CONTACT.email}`} className="text-lg font-semibold text-blue hover:underline">Служба підтримки</a>
       </div>
-    </div>
+    </Modal>
   );
 }

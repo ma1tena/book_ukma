@@ -185,7 +185,7 @@ def _callback(client, monkeypatch, **claims_override):
 def test_microsoft_login_creates_corporate_user(ms, monkeypatch):
     assert ms.get("/api/auth/providers").json()["microsoft"] is True
     r = _callback(ms, monkeypatch)
-    assert r.status_code in (302, 307) and "#/auth/callback?token=" in r.headers["location"]
+    assert r.status_code in (302, 307) and "/auth/callback#token=" in r.headers["location"]
     token = r.headers["location"].split("token=")[1]
     me = ms.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"}).json()
     assert me["email"] == "student@ukma.edu.ua" and me["provider"] == "microsoft"

@@ -43,8 +43,8 @@ export default function MonthCalendar({ booked, selectedDay, onSelect }) {
           const past = d < today;
           const full = !past && info.free === 0;
           const selected = selectedDay && sameDay(d, selectedDay);
-          const cls = selected ? "bg-gold font-bold text-white"
-            : past ? "cursor-not-allowed bg-mist-50 text-slate-300/70"
+          const cls = selected ? "bg-gold-dark font-bold text-white"
+            : past ? "cursor-not-allowed bg-mist-50 text-slate-300"
             : full ? "cursor-not-allowed bg-slate-200 text-slate line-through"
             : "bg-white font-semibold text-navy hover:bg-mist-100";
           return (

@@ -179,7 +179,7 @@ def create_booking(data: BookingCreate, bg: BackgroundTasks, user: User = Depend
         bg.add_task(emailer.send_mail, admin_email, f"book_ukma: нова заявка — {booking.event_name}",
                     f"Нова заявка на розгляді.\n\nЗахід: {booking.event_name}\nПриміщення: {room.name}\n"
                     f"Коли: {_when(booking)}\nЗаявник: {booking.responsible_name} ({booking.email})\n\n"
-                    f"Розглянути: {auth.FRONTEND_URL}/#/cabinet", kind="new_booking")
+                    f"Розглянути: {auth.FRONTEND_URL}/cabinet", kind="new_booking")
     return booking
 
 
@@ -244,7 +244,7 @@ def admin_update_booking(booking_id: int, data: BookingAdminUpdate, bg: Backgrou
                 + ("підтверджено. Слот закріплено за вами." if ok else "відхилено."))
         if booking.admin_comment:
             text += f"\n\nКоментар адміністраторки: {booking.admin_comment}"
-        text += f"\n\nПодання та статус: {auth.FRONTEND_URL}/#/petition/{booking.id}"
+        text += f"\n\nПодання та статус: {auth.FRONTEND_URL}/petition/{booking.id}"
         bg.add_task(emailer.send_mail, booking.email, f"book_ukma: заявку {'підтверджено' if ok else 'відхилено'}", text,
                     kind="decision")
     return to_admin_out(booking)

@@ -4,7 +4,7 @@ import * as api from "../../api";
 import ErrorBanner from "../../components/ErrorBanner";
 import { useFetch } from "../../hooks";
 
-const input = "w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-base text-navy-dark outline-none transition placeholder:text-slate-300 focus:border-blue focus:ring-2 focus:ring-blue/20";
+const input = "w-full rounded-lg border border-line bg-white px-4 py-2.5 text-base text-navy-dark outline-none transition placeholder:text-slate-400 focus:border-blue focus:ring-2 focus:ring-blue/40";
 const saveBtn = "rounded-md border-2 border-navy bg-navy px-6 py-2.5 font-semibold text-white transition hover:border-gold hover:bg-white hover:text-navy disabled:opacity-60";
 
 const Row = ({ label, hint, children }) => (
@@ -54,7 +54,7 @@ function PhotosEditor({ photos, onChange }) {
       {photos.map((p, i) => (
         <div key={p} className="flex items-center gap-3 rounded-lg border border-mist-200 p-2">
           <div className="h-12 w-16 shrink-0 overflow-hidden rounded bg-mist-100"><img src={p} alt="" className="h-full w-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} /></div>
-          <div className="min-w-0 flex-1"><div className="truncate text-sm text-navy-dark">{p}</div>{i === 0 && <div className="text-xs font-bold text-gold">Обкладинка</div>}</div>
+          <div className="min-w-0 flex-1"><div className="truncate text-sm text-navy-dark">{p}</div>{i === 0 && <div className="text-xs font-bold text-gold-dark">Обкладинка</div>}</div>
           {i > 0 && <button type="button" onClick={() => cover(i)} title="Зробити обкладинкою" className="rounded-full p-2 text-gold transition hover:bg-gold/10"><ArrowUp size={18} /></button>}
           <button type="button" onClick={() => onChange(photos.filter((_, k) => k !== i))} aria-label="Прибрати фото" className="rounded-full p-2 text-slate hover:text-[#A3361B]"><X size={18} /></button>
         </div>

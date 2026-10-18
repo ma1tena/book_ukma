@@ -2,6 +2,7 @@ import { Check, ChevronRight, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import * as api from "../../api";
 import ErrorBanner from "../../components/ErrorBanner";
+import Modal from "../../components/Modal";
 import { useFetch } from "../../hooks";
 import { STATUS } from "../../utils/status";
 import { fmt, fmtTime } from "../../utils/time";
@@ -31,36 +32,33 @@ export function BookingModal({ b, onClose, onUpdated }) {
     ["Організатори", b.organizers], ["Контактна особа", `${b.contact_phone} ${b.contact_name}`],
   ];
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-navy-dark/60 p-4 sm:items-center" onClick={onClose}>
-      <div className="relative my-6 w-full max-w-[720px] rounded-2xl bg-white p-6 shadow-2xl sm:p-9" onClick={(ev) => ev.stopPropagation()}>
-        <button onClick={onClose} aria-label="Закрити" className="absolute right-4 top-4 rounded-full p-2 text-slate transition hover:bg-mist-100 hover:text-navy"><X size={22} /></button>
-        <div className="flex flex-wrap items-center gap-3 pr-8"><h2 className="text-2xl font-bold text-navy">Заявка №{b.id}</h2><Badge status={b.status} /></div>
-        <dl className="mt-5 divide-y divide-mist-200 rounded-lg border border-mist-200 text-sm">
-          {rows.map(([k, v]) => <div key={k} className="grid gap-1 px-4 py-2.5 sm:grid-cols-[150px_1fr]"><dt className="text-slate">{k}</dt><dd className="font-semibold text-navy-dark">{v}</dd></div>)}
-        </dl>
-        <a href={`#/petition/${b.id}`} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-semibold text-blue hover:underline">Відкрити подання ↗</a>
+    <Modal label={`Заявка №${b.id}`} onClose={onClose} maxWidth="max-w-[720px]" panelClass="p-6 sm:p-9">
+      <div className="flex flex-wrap items-center gap-3 pr-8"><h2 className="text-2xl font-bold text-navy">Заявка №{b.id}</h2><Badge status={b.status} /></div>
+      <dl className="mt-5 divide-y divide-mist-200 rounded-lg border border-mist-200 text-sm">
+        {rows.map(([k, v]) => <div key={k} className="grid gap-1 px-4 py-2.5 sm:grid-cols-[150px_1fr]"><dt className="text-slate">{k}</dt><dd className="font-semibold text-navy-dark">{v}</dd></div>)}
+      </dl>
+      <a href={`/petition/${b.id}`} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-semibold text-blue hover:underline">Відкрити подання ↗</a>
 
-        <label className="mt-6 block">
-          <span className="mb-1.5 block text-sm font-semibold text-navy">Коментар для заявника</span>
-          <textarea rows={3} maxLength={1000} value={comment} onChange={(ev) => setComment(ev.target.value)}
-                    placeholder="Обов'язково при відхиленні: причина або що змінити, щоб погодити. При підтвердженні — за потреби."
-                    className="w-full rounded-lg border border-slate-200 px-4 py-3 text-base outline-none transition placeholder:text-slate-300 focus:border-blue focus:ring-2 focus:ring-blue/20" />
-        </label>
-        {err && <p className="mt-3 rounded-lg bg-coral/10 px-4 py-3 text-sm text-navy-dark">⚠️ {err}</p>}
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <button onClick={() => decide("approved")} disabled={!!busy || b.status === "approved"}
-                  className="inline-flex items-center gap-2 rounded-md border-2 border-navy bg-navy px-6 py-3 font-semibold text-white transition hover:border-gold hover:bg-white hover:text-navy disabled:opacity-50">
-            <Check size={18} className="text-gold" /> {busy === "approved" ? "Зачекайте…" : "Підтвердити"}
-          </button>
-          <button onClick={() => decide("rejected")} disabled={!!busy || b.status === "rejected"}
-                  className="inline-flex items-center gap-2 rounded-md border-2 border-coral px-6 py-3 font-semibold text-[#A3361B] transition hover:bg-coral/10 disabled:opacity-50">
-            <X size={18} /> {busy === "rejected" ? "Зачекайте…" : "Відхилити"}
-          </button>
-          {b.status !== "pending" && <button onClick={() => decide("pending")} disabled={!!busy} className="text-sm font-semibold text-slate underline hover:text-navy">Повернути на розгляд</button>}
-        </div>
-        <p className="mt-3 text-xs text-slate">Заявник отримає лист із рішенням і вашим коментарем.</p>
+      <label className="mt-6 block">
+        <span className="mb-1.5 block text-sm font-semibold text-navy">Коментар для заявника</span>
+        <textarea rows={3} maxLength={1000} value={comment} onChange={(ev) => setComment(ev.target.value)}
+                  placeholder="Обов'язково при відхиленні: причина або що змінити, щоб погодити. При підтвердженні — за потреби."
+                  className="w-full rounded-lg border border-line px-4 py-3 text-base outline-none transition placeholder:text-slate-400 focus:border-blue focus:ring-2 focus:ring-blue/40" />
+      </label>
+      {err && <p className="mt-3 rounded-lg bg-coral/10 px-4 py-3 text-sm text-navy-dark">⚠️ {err}</p>}
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <button onClick={() => decide("approved")} disabled={!!busy || b.status === "approved"}
+                className="inline-flex items-center gap-2 rounded-md border-2 border-navy bg-navy px-6 py-3 font-semibold text-white transition hover:border-gold hover:bg-white hover:text-navy disabled:opacity-50">
+          <Check size={18} className="text-gold" /> {busy === "approved" ? "Зачекайте…" : "Підтвердити"}
+        </button>
+        <button onClick={() => decide("rejected")} disabled={!!busy || b.status === "rejected"}
+                className="inline-flex items-center gap-2 rounded-md border-2 border-coral px-6 py-3 font-semibold text-[#A3361B] transition hover:bg-coral/10 disabled:opacity-50">
+          <X size={18} /> {busy === "rejected" ? "Зачекайте…" : "Відхилити"}
+        </button>
+        {b.status !== "pending" && <button onClick={() => decide("pending")} disabled={!!busy} className="text-sm font-semibold text-slate underline hover:text-navy">Повернути на розгляд</button>}
       </div>
-    </div>
+      <p className="mt-3 text-xs text-slate">Заявник отримає лист із рішенням і вашим коментарем.</p>
+    </Modal>
   );
 }
 
