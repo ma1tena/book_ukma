@@ -3,6 +3,7 @@ import base64
 import hashlib
 import hmac
 import json
+import logging
 import os
 import secrets
 import time
@@ -22,6 +23,7 @@ from models import AccountType, AdminGrant, AuthSession, EmailCode, User, UserRo
 from schemas import PHONE_RE
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+log = logging.getLogger("uvicorn.error")
 
 # ───────── Налаштування (змінні середовища) ─────────
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")       # ОБОВ'ЯЗКОВО змінити на проді
@@ -381,6 +383,8 @@ def microsoft_callback(code: str | None = None, state: str | None = None, error:
             "grant_type": "authorization_code", "redirect_uri": f"{BACKEND_URL}/api/auth/microsoft/callback",
             "scope": "openid profile email"})
         if r.status_code != 200:
+            # Microsoft повертає код AADSTS… з причиною (невірний секрет, тип платформи тощо) — пишемо його в логи
+            log.warning("Microsoft token error %s: %s", r.status_code, r.text[:500])
             return fail("Office 365 не підтвердив вхід. Спробуйте ще раз")
         # id_token отримано безпосередньо від Microsoft по TLS з client secret, тож підпис додатково не перевіряємо (OIDC Core §3.1.3.7)
         claims = _claims(r.json()["id_token"])
