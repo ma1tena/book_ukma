@@ -1,4 +1,5 @@
-const BASE = import.meta.env.VITE_API_URL || "";
+// /api проксує Vite у dev і Vercel у проді (frontend/vercel.json), тому запити йдуть на той самий домен.
+const BASE = "";
 const TOKEN_KEY = "book_ukma_token";
 
 export const getToken = () => { try { return localStorage.getItem(TOKEN_KEY); } catch { return null; } };
