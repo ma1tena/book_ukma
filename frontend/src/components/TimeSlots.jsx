@@ -3,8 +3,8 @@ import { slotState } from "../utils/slots";
 import { SLOT_MIN, addMin, daySlots, fmt, fmtTime } from "../utils/time";
 
 const STYLES = {
-  free: "border-mist-200 bg-white text-navy hover:border-blue hover:bg-mist-100",
-  selected: "border-gold bg-gold text-white",
+  free: "border-line bg-white text-navy hover:border-blue hover:bg-mist-100",
+  selected: "border-gold-dark bg-gold-dark text-white",
   busy: "cursor-not-allowed border-transparent bg-slate-200 text-slate line-through",
   pending: "cursor-not-allowed border-amber bg-amber/15 text-[#8A5A17]",
   past: "cursor-not-allowed border-transparent bg-mist-100 text-slate-300",
@@ -58,12 +58,12 @@ export default function TimeSlots({ day, booked, selection, onChange, onError })
         })}
       </div>
       <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate">
-        <Legend cls="border-mist-200 bg-white" text="Вільно" />
-        <Legend cls="border-gold bg-gold" text="Ваш вибір" />
+        <Legend cls="border-line bg-white" text="Вільно" />
+        <Legend cls="border-gold-dark bg-gold-dark" text="Ваш вибір" />
         <Legend cls="border-amber bg-amber/15" text="На розгляді" />
         <Legend cls="border-transparent bg-slate-200" text="Зайнято" />
       </div>
-      <p className="mt-2 text-xs text-slate-300">Оберіть початок, а потім кінець події (слоти по {SLOT_MIN} хв).</p>
+      <p className="mt-2 text-xs text-slate-400">Оберіть початок, а потім кінець події (слоти по {SLOT_MIN} хв).</p>
     </div>
   );
 }

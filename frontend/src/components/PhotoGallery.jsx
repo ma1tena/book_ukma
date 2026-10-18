@@ -16,7 +16,7 @@ export default function PhotoGallery({ photos, alt }) {
     <div>
       <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-navy to-blue-deep">
         {photos.filter((p) => !bad.has(p)).map((src) => (
-          <img key={src} src={src} alt={alt} onError={() => markBad(src)}
+          <img key={src} src={src} alt={`${alt}, фото ${list.indexOf(src) + 1}`} width="1600" height="1200" decoding="async" loading={src === list[cur] ? "eager" : "lazy"} onError={() => markBad(src)}
                className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${src === list[cur] ? "opacity-100" : "opacity-0"}`} />
         ))}
         {n > 1 && (
@@ -32,7 +32,7 @@ export default function PhotoGallery({ photos, alt }) {
           {list.map((src, k) => (
             <button key={src} onClick={() => setI(k)} aria-label={`Фото ${k + 1}`}
                     className={`h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition ${k === cur ? "border-gold" : "border-transparent opacity-70 hover:opacity-100"}`}>
-              <img src={src} alt="" onError={() => markBad(src)} className="h-full w-full object-cover" />
+              <img src={src} alt="" loading="lazy" width="96" height="64" onError={() => markBad(src)} className="h-full w-full object-cover" />
             </button>
           ))}
         </div>

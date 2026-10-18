@@ -15,7 +15,7 @@ export default function MyBookings() {
       {user && error && <ErrorBanner message={error} onRetry={reload} />}
       {user && loading && !data && <p className="text-center text-slate">Завантаження…</p>}
       {user && data?.length === 0 && (
-        <p className="text-center text-slate">Заявок ще немає. Оберіть <a href="#/" className="font-semibold text-blue underline">корпус і приміщення</a>, щоб створити першу.</p>
+        <p className="text-center text-slate">Заявок ще немає. Оберіть <a href="/" className="font-semibold text-blue underline">корпус і приміщення</a>, щоб створити першу.</p>
       )}
 
       <div className="space-y-4">
@@ -25,7 +25,7 @@ export default function MyBookings() {
             <article key={b.id} className="rounded-2xl bg-white p-6 ring-1 ring-mist-200">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-xl font-bold text-navy">{b.event_name}</h3>
+                  <h2 className="text-xl font-bold text-navy">{b.event_name}</h2>
                   <p className="mt-1 text-slate">{b.room_name} · {fmt(s, { day: "numeric", month: "long", year: "numeric" })}, {fmtTime(s)}–{fmtTime(e)}</p>
                 </div>
                 <span className={`rounded-full border px-4 py-1.5 text-sm font-bold ${st.cls}`}>{st.label}</span>
@@ -35,7 +35,7 @@ export default function MyBookings() {
                   <b className="text-navy">Коментар адміністраторки:</b> {b.admin_comment}
                 </div>
               )}
-              <a href={`#/petition/${b.id}`} className="group mt-4 inline-flex items-center gap-2 font-semibold text-blue hover:underline">
+              <a href={`/petition/${b.id}`} className="group mt-4 inline-flex items-center gap-2 font-semibold text-blue hover:underline">
                 Переглянути подання <ArrowRight size={18} className="text-gold transition-transform group-hover:translate-x-1" />
               </a>
             </article>

@@ -368,7 +368,7 @@ def microsoft_login():
 def microsoft_callback(code: str | None = None, state: str | None = None, error: str | None = None,
                        db: Session = Depends(get_db)):
     def fail(msg: str):
-        return RedirectResponse(f"{FRONTEND_URL}/#/auth/callback?error={quote(msg)}")
+        return RedirectResponse(f"{FRONTEND_URL}/auth/callback#error={quote(msg)}")
 
     st = _unsign(state)
     if error:
@@ -401,4 +401,4 @@ def microsoft_callback(code: str | None = None, state: str | None = None, error:
                     role=UserRole.admin if email in ADMIN_EMAILS else UserRole.user)
         db.add(user)
         db.commit()
-    return RedirectResponse(f"{FRONTEND_URL}/#/auth/callback?token={create_session(db, user)}")
+    return RedirectResponse(f"{FRONTEND_URL}/auth/callback#token={create_session(db, user)}")
