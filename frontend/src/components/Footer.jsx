@@ -1,15 +1,14 @@
 import { Mail, MapPin, Phone, Printer } from "lucide-react";
 import { CONTACT } from "../config";
-import { goSection } from "../router";
 
-const Label = ({ children }) => <div className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-white/50">{children}</div>;
+const Label = ({ children }) => <h2 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-white/60">{children}</h2>;
 
 export default function Footer() {
   return (
     <footer id="contacts" className="mt-20 scroll-mt-28 bg-navy text-white print:hidden">
-      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-4">
+      <div className="grid gap-10 px-page py-14 md:grid-cols-4">
         <div>
-          <img src="/logo-naukma-white.svg" alt="НаУКМА" className="h-14 w-auto" />
+          <img src="/logo-naukma-white.svg" alt="Національний університет «Києво-Могилянська академія»" width="293" height="100" loading="lazy" className="h-14 w-auto" />
           <p className="mt-5 text-sm leading-6 text-white/60">{CONTACT.org}</p>
         </div>
         <div>
@@ -25,11 +24,13 @@ export default function Footer() {
         </div>
         <div className="space-y-2">
           <Label>Навігація</Label>
-          <div><button onClick={() => goSection("buildings")} className="hover:underline">Обрати корпус</button></div>
-          <div><button onClick={() => goSection("contacts")} className="hover:underline">Контакти</button></div>
+          <nav aria-label="Навігація у футері" className="space-y-2">
+            <div><a href="/#buildings" className="inline-block py-1 hover:underline">Обрати корпус</a></div>
+            <div><a href="#contacts" className="inline-block py-1 hover:underline">Контакти</a></div>
+          </nav>
         </div>
       </div>
-      <div className="mx-auto max-w-7xl border-t border-white/10 px-6 py-6 text-sm text-white/50">
+      <div className="border-t border-white/10 px-page py-6 text-sm text-white/60">
         © {new Date().getFullYear()} Києво-Могилянська академія. Усі права захищено.
       </div>
     </footer>

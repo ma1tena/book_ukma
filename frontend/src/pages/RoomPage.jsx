@@ -10,6 +10,7 @@ import TimeSlots from "../components/TimeSlots";
 import { useFetch } from "../hooks";
 import { parseBooked } from "../utils/slots";
 import { fmt, fmtTime } from "../utils/time";
+import { useMeta } from "../seo";
 
 const Legend = ({ cls, text }) => (
   <span className="flex items-center gap-2"><i className={`inline-block h-4 w-4 border ${cls}`} />{text}</span>
@@ -26,23 +27,27 @@ export default function RoomPage({ id }) {
   const generate = () => (user ? setQuiz(true) : openAuth({ view: "register", onDone: () => setQuiz(true) }));
   const booked = useMemo(() => (room ? parseBooked(room.booked_slots) : []), [room]);
   const pickDay = (d) => { setDay(d); setSelection(null); setNotice(null); };
+  useMeta({
+    title: room ? `${room.name}, ${room.building_name}` : "Приміщення",
+    description: room && `${room.name} (${room.building_name}, НаУКМА): ${room.capacity_text ?? `до ${room.capacity} осіб`}. ${room.description || ""} Перевірте вільні дати й забронюйте онлайн.`.replace(/\s+/g, " ").trim(),
+  });
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-12 md:px-6 lg:max-w-none lg:px-[calc(var(--u)*232)]"><div className="mx-auto">
-      <a href={room ? `#/building/${room.building_id}` : "#/"} className="group inline-flex items-center gap-2 text-slate transition hover:text-navy">
+    <main id="content" tabIndex={-1} className="px-page py-16 outline-none"><div className="mx-auto max-w-6xl lg:max-w-[calc(var(--u)*2374)]">
+      <a href={room ? `/building/${room.building_id}` : "/"} className="group inline-flex items-center gap-2 py-1 text-slate transition hover:text-navy">
         <ArrowLeft size={18} className="text-gold transition-transform group-hover:-translate-x-1" /> До приміщень корпусу
       </a>
       {error && <ErrorBanner message={error} onRetry={reload} />}
       {loading && !room && <p className="mt-10 text-center text-slate">Завантаження…</p>}
 
       {room && (
-        <div className="mt-8 grid items-start gap-10 lg:grid-cols-2 lg:gap-x-[calc(var(--u)*100)]">
+        <div className="mt-8 grid items-start gap-12 lg:grid-cols-2 lg:gap-x-[calc(var(--u)*132)]">
           <div>
             <PhotoGallery photos={room.photos?.length ? room.photos : room.photo_url ? [room.photo_url] : []} alt={room.name} />
             <div className="mt-8 text-xs font-bold uppercase tracking-[0.25em] text-blue">{room.building_name}</div>
-            <h1 className="mt-2 text-5xl font-bold tracking-tight text-navy">{room.name}</h1>
-            <div className="mt-5 flex items-center gap-2 text-slate"><Users size={18} />Вміщує {room.capacity_text ?? `до ${room.capacity} осіб`}</div>
-            <p className="mt-5 text-lg leading-8 text-navy-dark">{room.description}</p>
+            <h1 className="mt-2 text-4xl font-bold tracking-tight text-navy md:text-5xl">{room.name}</h1>
+            <div className="mt-4 flex items-center gap-2 text-slate"><Users size={18} />Вміщує {room.capacity_text ?? `до ${room.capacity} осіб`}</div>
+            <p className="mt-4 text-lg leading-8 text-navy-dark">{room.description}</p>
             <div className="mt-8 text-xs font-bold uppercase tracking-[0.2em] text-slate">Обладнання</div>
             <div className="mt-3 flex flex-wrap gap-2">
               {room.inventory.map((it) => (
@@ -59,8 +64,8 @@ export default function RoomPage({ id }) {
               <p className="mb-6 mt-1 text-slate">Оберіть вільний день для бронювання</p>
               <MonthCalendar booked={booked} selectedDay={day} onSelect={pickDay} />
               <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate">
-                <Legend cls="border-mist-200 bg-white" text="Вільно" />
-                <Legend cls="border-gold bg-gold" text="Обраний день" />
+                <Legend cls="border-line bg-white" text="Вільно" />
+                <Legend cls="border-gold-dark bg-gold-dark" text="Обраний день" />
                 <Legend cls="border-slate-200 bg-slate-200" text="Зайнято" />
               </div>
             </section>
